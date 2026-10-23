@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0b12">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MultiCam">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>MultiCam — video + multi-shot camera</title>
 <style>
   :root{
@@ -232,6 +239,35 @@
   .thumb b.tag{left:3px;right:auto;background:#ffb703;color:#1a1200}
   .empty-note{grid-column:1/-1;color:var(--dim);font-size:13px;display:flex;align-items:center;height:74px;padding-left:4px}
 
+
+  /* ---------- menu sheet ---------- */
+  .sheet{
+    position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;
+    background:rgba(4,4,10,0);backdrop-filter:blur(0);
+    visibility:hidden;pointer-events:none;transition:background .22s,backdrop-filter .22s,visibility 0s .26s
+  }
+  .sheet.show{background:rgba(4,4,10,.6);backdrop-filter:blur(3px);visibility:visible;pointer-events:auto;transition:background .22s,backdrop-filter .22s}
+  .sheet-card{
+    width:100%;max-width:600px;max-height:86vh;display:flex;flex-direction:column;
+    background:linear-gradient(180deg,#1b1b29,#14141f);border:1px solid var(--line);border-bottom:0;
+    border-radius:24px 24px 0 0;padding:8px 14px calc(16px + env(safe-area-inset-bottom));
+    transform:translateY(105%);transition:transform .26s cubic-bezier(.2,.8,.2,1);
+    box-shadow:0 -24px 60px -20px rgba(0,0,0,.85)
+  }
+  .sheet.show .sheet-card{transform:translateY(0)}
+  .grab{width:42px;height:4px;border-radius:99px;background:rgba(255,255,255,.2);margin:2px auto 10px}
+  .tabs{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+  .tab{
+    background:transparent;border:1px solid transparent;color:var(--dim);border-radius:999px;
+    padding:8px 15px;font-size:13.5px;font-weight:650;cursor:pointer
+  }
+  .tab.active{background:var(--accent-soft);border-color:rgba(109,74,255,.45);color:#fff}
+  .pane{overflow-y:auto;overscroll-behavior:contain;min-height:0;padding-bottom:4px;scrollbar-width:thin}
+  .quick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .pane .strip{max-height:none;overflow:visible}
+  .pane .panel-head{margin-top:0}
+  #galCount{opacity:.75;font-variant-numeric:tabular-nums}
+
   /* ---------- lightbox ---------- */
   .lightbox{
     position:fixed;inset:0;z-index:50;display:none;flex-direction:column;
@@ -283,8 +319,8 @@
 
     <div class="chip tl" id="count">0 photos</div>
     <div class="chip tl2 hidden" id="recChip"><i class="rd"></i><span id="recText">REC 0:00</span></div>
-    <button class="icon-btn" id="gridBtn" title="Toggle framing grid" aria-label="Toggle framing grid">
-      <svg viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+    <button class="icon-btn" id="flip" title="Switch camera" aria-label="Switch camera" disabled>
+      <svg viewBox="0 0 24 24"><path d="M4 9a8 8 0 0 1 13.5-4M20 15a8 8 0 0 1-13.5 4"/><path d="M17 3v4h-4M7 21v-4h4"/></svg>
     </button>
     <div class="chip bc hidden" id="modeChip"></div>
 
@@ -316,18 +352,39 @@
   </div>
 
   <div class="toolbar">
-    <button class="pill" id="flip" disabled>
-      <svg viewBox="0 0 24 24"><path d="M4 9a8 8 0 0 1 13.5-4M20 15a8 8 0 0 1-13.5 4"/><path d="M17 3v4h-4M7 21v-4h4"/></svg>Flip
+    <button class="pill" id="menuBtn">
+      <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu
     </button>
-    <button class="pill" id="auto" title="Take a photo every few seconds">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span id="autoLbl">Auto shoot</span>
-    </button>
-    <button class="pill" id="settingsBtn">
-      <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Settings
+    <button class="pill" id="galleryBtn">
+      <svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5 4.5 4"/></svg>Gallery <span id="galCount"></span>
     </button>
   </div>
 
-  <div class="panel hidden" id="settings">
+</div>
+
+<div class="sheet" id="sheet" aria-hidden="true">
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Menu">
+    <div class="grab"></div>
+    <div class="tabs">
+      <button class="tab active" id="tabOptions">Options</button>
+      <button class="tab" id="tabGallery">Gallery</button>
+      <span class="spacer"></span>
+      <button class="btn" id="sheetClose">Done</button>
+    </div>
+
+    <div class="pane" id="paneOptions">
+      <div class="sec">Quick actions</div>
+      <div class="quick">
+        <button class="pill" id="auto" title="Take a photo every few seconds">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span id="autoLbl">Auto shoot</span>
+        </button>
+        <button class="pill" id="gridBtn">
+          <svg viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Grid
+        </button>
+        <button class="pill hidden" id="installBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/></svg>Install app
+        </button>
+      </div>
     <div class="sec">Video</div>
     <div class="sgrid">
       <label class="field">Resolution
@@ -368,9 +425,15 @@
     <div class="row hidden" id="torchRow"><button class="btn" id="torchBtn">Torch: off</button></div>
     <p class="hint" id="capsHint">Zoom and torch appear here when this camera supports them.</p>
     <p class="hint" id="storageInfo"></p>
-  </div>
 
-  <div class="panel">
+      <p class="hint" style="text-align:center">
+    Space = photo (hold = burst) · R = record · M = catch moment · ← → = browse · Esc = close<br>
+    Photos and videos are saved to this browser's storage as you shoot, so a reload won't lose them.
+    Tap an item to save it to your phone.
+  </p>
+    </div>
+
+    <div class="pane hidden" id="paneGallery">
     <div class="panel-head">
       <h3>Gallery</h3>
       <span class="spacer"></span>
@@ -378,13 +441,8 @@
       <button class="btn primary" id="zip" disabled>Photos .zip</button>
     </div>
     <div class="strip" id="strip"></div>
+    </div>
   </div>
-
-  <p class="footnote">
-    Space = photo (hold = burst) · R = record · M = catch moment · ← → = browse · Esc = close<br>
-    Photos and videos are saved to this browser's storage as you shoot, so a reload won't lose them.
-    Tap an item to save it to your phone.
-  </p>
 </div>
 
 <div class="lightbox" id="lightbox">
@@ -420,8 +478,8 @@
     phBody: $("#phBody"), startBtn: $("#startBtn"), count: $("#count"), meta: $("#meta"),
     dot: $("#dot"), recChip: $("#recChip"), recText: $("#recText"), modeChip: $("#modeChip"),
     shutter: $("#shutter"), recBtn: $("#recBtn"), momentBtn: $("#momentBtn"),
-    flip: $("#flip"), auto: $("#auto"), autoLbl: $("#autoLbl"), settingsBtn: $("#settingsBtn"),
-    settings: $("#settings"), zoomRow: $("#zoomRow"), zoom: $("#zoom"), zoomVal: $("#zoomVal"),
+    flip: $("#flip"), auto: $("#auto"), autoLbl: $("#autoLbl"),
+    installBtn: $("#installBtn"), sheet: $("#sheet"), sheetClose: $("#sheetClose"), menuBtn: $("#menuBtn"), galleryBtn: $("#galleryBtn"), galCount: $("#galCount"), tabOptions: $("#tabOptions"), tabGallery: $("#tabGallery"), paneOptions: $("#paneOptions"), paneGallery: $("#paneGallery"), zoomRow: $("#zoomRow"), zoom: $("#zoom"), zoomVal: $("#zoomVal"),
     torchRow: $("#torchRow"), torchBtn: $("#torchBtn"), capsHint: $("#capsHint"),
     storageInfo: $("#storageInfo"), strip: $("#strip"), clear: $("#clear"), zip: $("#zip"),
     lb: $("#lightbox"), lbImg: $("#lbImg"), lbVideo: $("#lbVideo"), lbLabel: $("#lbLabel"),
@@ -682,6 +740,7 @@
       (videos ? " · " + videos + (videos === 1 ? " video" : " videos") : "");
     el.clear.disabled = state.items.length === 0;
     el.zip.disabled = photos === 0;
+    el.galCount.textContent = state.items.length ? "(" + state.items.length + ")" : "";
 
     el.strip.innerHTML = "";
     if (!state.items.length) {
@@ -1493,13 +1552,32 @@
   el.auto.addEventListener("click", toggleAuto);
   el.gridBtn.addEventListener("click", function () {
     el.grid.classList.toggle("on");
-    el.gridBtn.classList.toggle("on", el.grid.classList.contains("on"));
+    el.gridBtn.classList.toggle("active", el.grid.classList.contains("on"));
   });
-  el.settingsBtn.addEventListener("click", function () {
-    var open = el.settings.classList.toggle("hidden") === false;
-    el.settingsBtn.classList.toggle("active", open);
-    if (open) { storageTimer = 0; refreshStorage(); }
-  });
+  function setTab(name) {
+    var g = name === "gallery";
+    el.tabOptions.classList.toggle("active", !g);
+    el.tabGallery.classList.toggle("active", g);
+    el.paneOptions.classList.toggle("hidden", g);
+    el.paneGallery.classList.toggle("hidden", !g);
+  }
+  function openSheet(tab) {
+    setTab(tab || "options");
+    el.sheet.classList.add("show");
+    el.sheet.setAttribute("aria-hidden", "false");
+    storageTimer = 0;
+    refreshStorage();
+  }
+  function closeSheet() {
+    el.sheet.classList.remove("show");
+    el.sheet.setAttribute("aria-hidden", "true");
+  }
+  el.menuBtn.addEventListener("click", function () { openSheet("options"); });
+  el.galleryBtn.addEventListener("click", function () { openSheet("gallery"); });
+  el.tabOptions.addEventListener("click", function () { setTab("options"); });
+  el.tabGallery.addEventListener("click", function () { setTab("gallery"); });
+  el.sheetClose.addEventListener("click", closeSheet);
+  el.sheet.addEventListener("click", function (e) { if (e.target === el.sheet) closeSheet(); });
   el.clear.addEventListener("click", clearAll);
   el.zip.addEventListener("click", downloadPhotosZip);
   el.lbClose.addEventListener("click", closeLightbox);
@@ -1551,6 +1629,7 @@
       if (e.key === "ArrowRight") navLightbox(1);
       return;
     }
+    if (el.sheet.classList.contains("show")) { if (e.key === "Escape") closeSheet(); return; }
     if (!state.stream) return;
     if (e.code === "Space") {
       e.preventDefault();
@@ -1585,6 +1664,46 @@
 
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
     navigator.mediaDevices.addEventListener("devicechange", refreshFlipButton);
+  }
+
+  /* --------------------------------------------------------- install (PWA) */
+
+  var deferredPrompt = null;
+  function isStandalone() {
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+  }
+  function isIOS() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    el.installBtn.classList.remove("hidden");
+  });
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    el.installBtn.classList.add("hidden");
+    toast("Installed — find MultiCam on your home screen", 4000);
+  });
+  el.installBtn.addEventListener("click", async function () {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      try { await deferredPrompt.userChoice; } catch (e) {}
+      deferredPrompt = null;
+      el.installBtn.classList.add("hidden");
+    } else if (isIOS()) {
+      toast("On iPhone/iPad: tap Share, then “Add to Home Screen”", 6000);
+    } else {
+      toast("Use your browser menu → “Install app” / “Add to Home screen”", 6000);
+    }
+  });
+  if (!isStandalone() && isIOS()) el.installBtn.classList.remove("hidden");
+
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (e) { console.warn("SW registration failed", e); });
+    });
   }
 
   /* --------------------------------------------------------------- startup */

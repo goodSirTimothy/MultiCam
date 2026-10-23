@@ -1,0 +1,18 @@
+{
+  "name": "MultiCam — video + multi-shot camera",
+  "short_name": "MultiCam",
+  "description": "Record video and fire photo bursts at the same time, with pre-roll and a one-tap Catch Moment button.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0b12",
+  "theme_color": "#0b0b12",
+  "categories": ["photo", "multimedia", "utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
