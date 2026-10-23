@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b12">
+<title>MultiCam — video + multi-shot camera</title>
+<style>
+  :root{
+    --bg:#0b0b12;
+    --panel:#14141f;
+    --panel-2:#1b1b28;
+    --line:rgba(255,255,255,.09);
+    --txt:#ececf4;
+    --dim:#9a9ab0;
+    --accent:#6d4aff;
+    --accent-soft:rgba(109,74,255,.16);
+    --danger:#ff5c72;
+    --good:#39d98a;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 600px at 80% -10%, rgba(109,74,255,.20), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(58,140,255,.12), transparent 55%),
+      var(--bg);
+    color:var(--txt);
+    font:15px/1.5 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:none;
+    -webkit-user-select:none;user-select:none;
+  }
+  .app{
+    max-width:600px;
+    margin:0 auto;
+    padding:calc(14px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    min-height:100%;
+  }
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.01em}
+  .dot{
+    width:10px;height:10px;border-radius:50%;background:var(--dim);
+    box-shadow:0 0 0 4px rgba(154,154,176,.12);transition:.25s
+  }
+  .dot.live{background:var(--good);box-shadow:0 0 0 4px rgba(57,217,138,.16);animation:pulse 2s infinite}
+  .dot.rec{background:var(--danger);box-shadow:0 0 0 4px rgba(255,92,114,.18);animation:pulseR 1.2s infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 9px rgba(57,217,138,0)}}
+  @keyframes pulseR{50%{box-shadow:0 0 0 9px rgba(255,92,114,0)}}
+  .status{font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+  /* ---------- stage ---------- */
+  .stage{
+    position:relative;
+    border-radius:var(--radius);
+    overflow:hidden;
+    background:#000;
+    border:1px solid var(--line);
+    aspect-ratio:3/4;
+    max-height:54vh;
+    margin-inline:auto;
+    width:100%;
+    box-shadow:0 18px 44px -22px rgba(0,0,0,.9);
+  }
+  .stage.is-rec{border-color:rgba(255,92,114,.7);box-shadow:0 0 0 1px rgba(255,92,114,.35),0 18px 44px -22px rgba(0,0,0,.9)}
+  @media (min-aspect-ratio:1/1){ .stage{aspect-ratio:4/3;max-height:52vh} }
+  #video{
+    width:100%;height:100%;object-fit:contain;display:block;
+    background:#000;transform-origin:center;
+  }
+  .grid{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .18s}
+  .grid.on{opacity:.85}
+  .grid span{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.34)}
+  .grid span:nth-child(1){left:33.333%}
+  .grid span:nth-child(2){left:66.666%}
+  .grid i{position:absolute;left:0;right:0;height:1px;background:rgba(255,255,255,.34)}
+  .grid i:nth-child(3){top:33.333%}
+  .grid i:nth-child(4){top:66.666%}
+
+  .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+  .flash.go{animation:snap .34s ease-out}
+  @keyframes snap{0%{opacity:.7}100%{opacity:0}}
+
+  .chip{
+    position:absolute;padding:6px 11px;border-radius:999px;
+    background:rgba(10,10,18,.62);backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.13);
+    font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;
+    display:flex;align-items:center;gap:6px;white-space:nowrap
+  }
+  .chip.tl{top:10px;left:10px}
+  .chip.tl2{top:46px;left:10px;background:rgba(255,92,114,.9);border-color:transparent;color:#fff}
+  .chip.tl2 .rd{width:8px;height:8px;border-radius:50%;background:#fff;animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.25}}
+  .chip.bc{bottom:12px;left:50%;transform:translateX(-50%);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;background:var(--accent);border-color:transparent}
+  .icon-btn{
+    position:absolute;top:10px;right:10px;
+    width:38px;height:38px;border-radius:12px;
+    background:rgba(10,10,18,.62);backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.13);color:#fff;
+    display:grid;place-items:center;cursor:pointer;padding:0
+  }
+  .icon-btn.on{background:var(--accent);border-color:transparent}
+  .icon-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ---------- placeholder ---------- */
+  .placeholder{
+    position:absolute;inset:0;display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:12px;
+    text-align:center;padding:26px;
+    background:linear-gradient(160deg,#15151f,#0d0d15)
+  }
+  .placeholder.show{display:flex}
+  .placeholder h2{margin:0;font-size:17px;font-weight:650}
+  .placeholder p{margin:0;color:var(--dim);font-size:13.5px;max-width:40ch}
+  .placeholder .glyph{
+    width:56px;height:56px;border-radius:16px;display:grid;place-items:center;
+    background:var(--accent-soft);border:1px solid rgba(109,74,255,.35)
+  }
+  .placeholder .glyph svg{width:26px;height:26px;stroke:#b7a4ff;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ---------- controls ---------- */
+  .controls{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:start;justify-items:center;gap:6px}
+  .cwrap{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0}
+  .cwrap label{font-size:11px;color:var(--dim);text-align:center;line-height:1.25}
+  .ctrl{
+    width:60px;height:60px;border-radius:18px;
+    background:var(--panel);border:1px solid var(--line);color:var(--txt);
+    display:grid;place-items:center;cursor:pointer;padding:0;
+    transition:.16s transform,.16s background,.16s border-color
+  }
+  .ctrl:hover{background:var(--panel-2)}
+  .ctrl:active{transform:scale(.93)}
+  .ctrl[disabled]{opacity:.35;cursor:not-allowed}
+  .ctrl.active{background:var(--accent);border-color:transparent;color:#fff}
+  .ctrl svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+  .recbtn .sq{width:26px;height:26px;border-radius:50%;background:var(--danger);transition:.18s border-radius,.18s transform}
+  .recbtn.on{border-color:rgba(255,92,114,.8);background:rgba(255,92,114,.14)}
+  .recbtn.on .sq{border-radius:7px;transform:scale(.72)}
+  .momentbtn{color:#ffd166}
+  .momentbtn.active{background:#ffb703;color:#1a1200}
+
+  .shutter{
+    width:76px;height:76px;border-radius:50%;padding:0;cursor:pointer;touch-action:none;
+    background:transparent;border:3px solid rgba(255,255,255,.88);
+    display:grid;place-items:center;transition:.14s transform,.14s border-color
+  }
+  .shutter span{
+    width:60px;height:60px;border-radius:50%;background:#fff;transition:.14s transform,background
+  }
+  .shutter:active{transform:scale(.95)}
+  .shutter:active span{transform:scale(.86)}
+  .shutter[disabled]{opacity:.4;cursor:not-allowed}
+  .shutter.auto{border-color:var(--accent)}
+  .shutter.auto span{background:var(--accent);transform:scale(.78)}
+  .shutter.burst span{background:#ffb703;transform:scale(.8)}
+
+  .toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .pill{
+    display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;
+    background:var(--panel);border:1px solid var(--line);color:var(--txt);
+    font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s background,.15s transform
+  }
+  .pill:hover{background:var(--panel-2)}
+  .pill:active{transform:scale(.96)}
+  .pill[disabled]{opacity:.4;cursor:not-allowed}
+  .pill.active{background:var(--accent);border-color:transparent;color:#fff}
+  .pill svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ---------- panels ---------- */
+  .panel{
+    background:linear-gradient(180deg,rgba(27,27,40,.75),rgba(20,20,31,.65));
+    border:1px solid var(--line);border-radius:var(--radius);padding:12px
+  }
+  .panel-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .panel-head h3{margin:0;font-size:13px;font-weight:650;letter-spacing:.02em;text-transform:uppercase;color:var(--dim)}
+  .spacer{flex:1}
+  .btn{
+    border:1px solid var(--line);background:var(--panel-2);color:var(--txt);
+    border-radius:11px;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;
+    transition:.15s background,.15s border-color,.15s transform;white-space:nowrap
+  }
+  .btn:hover{background:#232334}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+  .btn.primary:hover{background:#7d5fff}
+  .btn.ghost{background:transparent}
+  .btn[disabled]{opacity:.4;cursor:not-allowed}
+  .btn.danger{border-color:rgba(255,92,114,.4);color:#ffb3bd}
+  .btn.danger:hover{background:rgba(255,92,114,.14)}
+
+  /* ---------- settings ---------- */
+  .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .field{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--dim);font-weight:600;letter-spacing:.02em}
+  .field select{
+    background:var(--panel-2);color:var(--txt);border:1px solid var(--line);border-radius:10px;
+    padding:9px 10px;font-size:13.5px;font-family:inherit;-webkit-user-select:auto;user-select:auto
+  }
+  .sec{margin:14px 0 8px;font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+  .sec:first-child{margin-top:0}
+  .row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px}
+  .row input[type=range]{flex:1;accent-color:var(--accent)}
+  .hint{margin:10px 0 0;font-size:11.5px;color:var(--dim);line-height:1.5}
+
+  /* ---------- gallery ---------- */
+  .strip{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;
+    max-height:316px;overflow-y:auto;padding-right:2px;min-height:78px;scrollbar-width:thin
+  }
+  .strip::-webkit-scrollbar{width:6px}
+  .strip::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:99px}
+  .thumb{
+    position:relative;aspect-ratio:1/1;border-radius:13px;overflow:hidden;
+    border:1px solid var(--line);background:#000;cursor:pointer;padding:0;
+    transition:.15s transform,.15s border-color
+  }
+  .thumb:hover{transform:translateY(-2px);border-color:rgba(109,74,255,.7)}
+  .thumb.vid{border-color:rgba(255,92,114,.55)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb b{
+    position:absolute;bottom:3px;right:3px;font-size:10px;font-weight:700;
+    background:rgba(10,10,18,.76);border-radius:6px;padding:1px 5px;font-variant-numeric:tabular-nums;color:#fff
+  }
+  .thumb b.tag{left:3px;right:auto;background:#ffb703;color:#1a1200}
+  .empty-note{grid-column:1/-1;color:var(--dim);font-size:13px;display:flex;align-items:center;height:74px;padding-left:4px}
+
+  /* ---------- lightbox ---------- */
+  .lightbox{
+    position:fixed;inset:0;z-index:50;display:none;flex-direction:column;
+    background:rgba(6,6,12,.96);backdrop-filter:blur(6px);
+    padding:calc(12px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom))
+  }
+  .lightbox.show{display:flex}
+  .lb-bar{display:flex;align-items:center;gap:8px}
+  .lb-label{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .lb-stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-height:0;padding:12px 0}
+  .lb-stage img,.lb-stage video{max-width:100%;max-height:100%;border-radius:14px;border:1px solid var(--line);object-fit:contain;background:#000}
+  .nav{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:42px;height:42px;border-radius:50%;display:grid;place-items:center;
+    background:rgba(20,20,31,.82);border:1px solid var(--line);color:#fff;cursor:pointer;padding:0;z-index:2
+  }
+  .nav.prev{left:2px}.nav.next{right:2px}
+  .nav svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .lb-markers{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;align-items:center;font-size:12px;color:var(--dim)}
+  .lb-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));
+    transform:translate(-50%,14px);opacity:0;pointer-events:none;
+    background:rgba(24,24,36,.96);border:1px solid var(--line);
+    padding:10px 16px;border-radius:12px;font-size:13px;z-index:80;
+    transition:.22s;max-width:88vw;text-align:center;
+    box-shadow:0 14px 34px -16px rgba(0,0,0,.9)
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  .footnote{color:var(--dim);font-size:11.5px;text-align:center;line-height:1.5}
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand"><span class="dot" id="dot"></span> MultiCam</div>
+    <div class="status" id="meta">camera idle</div>
+  </header>
+
+  <div class="stage" id="stage">
+    <video id="video" playsinline muted autoplay></video>
+    <div class="grid" id="grid"><span></span><span></span><i></i><i></i></div>
+    <div class="flash" id="flash"></div>
+
+    <div class="chip tl" id="count">0 photos</div>
+    <div class="chip tl2 hidden" id="recChip"><i class="rd"></i><span id="recText">REC 0:00</span></div>
+    <button class="icon-btn" id="gridBtn" title="Toggle framing grid" aria-label="Toggle framing grid">
+      <svg viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+    </button>
+    <div class="chip bc hidden" id="modeChip"></div>
+
+    <div class="placeholder show" id="placeholder">
+      <div class="glyph">
+        <svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2a1 1 0 0 0 .83-.45l.77-1.15A1 1 0 0 1 10.13 4h3.74a1 1 0 0 1 .83.4l.77 1.15A1 1 0 0 0 16.3 6h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+      </div>
+      <h2 id="phTitle">Ready when you are</h2>
+      <p id="phBody">Grant camera and microphone access to start. Everything stays on this device — nothing is uploaded.</p>
+      <button class="btn primary" id="startBtn">Start camera</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="cwrap">
+      <button class="ctrl recbtn" id="recBtn" title="Start / stop video" aria-label="Record video" disabled><span class="sq"></span></button>
+      <label>Record video</label>
+    </div>
+    <div class="cwrap">
+      <button class="shutter" id="shutter" title="Photo (hold for burst)" aria-label="Capture photo" disabled><span></span></button>
+      <label>Photo · hold = burst</label>
+    </div>
+    <div class="cwrap">
+      <button class="ctrl momentbtn" id="momentBtn" title="Catch the moment" aria-label="Catch the moment" disabled>
+        <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>
+      </button>
+      <label>Catch moment</label>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="pill" id="flip" disabled>
+      <svg viewBox="0 0 24 24"><path d="M4 9a8 8 0 0 1 13.5-4M20 15a8 8 0 0 1-13.5 4"/><path d="M17 3v4h-4M7 21v-4h4"/></svg>Flip
+    </button>
+    <button class="pill" id="auto" title="Take a photo every few seconds">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span id="autoLbl">Auto shoot</span>
+    </button>
+    <button class="pill" id="settingsBtn">
+      <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Settings
+    </button>
+  </div>
+
+  <div class="panel hidden" id="settings">
+    <div class="sec">Video</div>
+    <div class="sgrid">
+      <label class="field">Resolution
+        <select id="sRes"><option value="720">720p</option><option value="1080">1080p</option><option value="4k">4K</option></select>
+      </label>
+      <label class="field">Frame rate
+        <select id="sFps"><option value="30">30 fps</option><option value="60">60 fps</option></select>
+      </label>
+      <label class="field">Microphone
+        <select id="sMic"><option value="on">On</option><option value="off">Off</option></select>
+      </label>
+      <label class="field">Video format
+        <select id="sFmt"><option value="auto">Auto (MP4 if possible)</option><option value="mp4">MP4</option><option value="webm">WebM</option></select>
+      </label>
+    </div>
+
+    <div class="sec">Photos</div>
+    <div class="sgrid">
+      <label class="field">Burst speed (hold shutter)
+        <select id="sBurst"><option value="3">3 / sec</option><option value="5">5 / sec</option><option value="8">8 / sec</option><option value="12">12 / sec</option></select>
+      </label>
+      <label class="field">Auto-shoot every
+        <select id="sAuto"><option value="0.5">0.5 s</option><option value="1">1 s</option><option value="2">2 s</option><option value="3">3 s</option><option value="5">5 s</option></select>
+      </label>
+      <label class="field">Pre-roll buffer
+        <select id="sPre"><option value="0">Off</option><option value="2">Last 2 s</option><option value="3">Last 3 s</option><option value="5">Last 5 s</option></select>
+      </label>
+      <label class="field">Catch-moment burst lasts
+        <select id="sPost"><option value="2">2 s</option><option value="3">3 s</option><option value="5">5 s</option><option value="10">10 s</option></select>
+      </label>
+      <label class="field">Hi-res single photos
+        <select id="sHires"><option value="off">Off (safe)</option><option value="on">On (when not recording)</option></select>
+      </label>
+    </div>
+
+    <div class="sec">Camera</div>
+    <div class="row hidden" id="zoomRow"><span>Zoom</span><input type="range" id="zoom" min="1" max="1" step="0.1" value="1"><b id="zoomVal">1×</b></div>
+    <div class="row hidden" id="torchRow"><button class="btn" id="torchBtn">Torch: off</button></div>
+    <p class="hint" id="capsHint">Zoom and torch appear here when this camera supports them.</p>
+    <p class="hint" id="storageInfo"></p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Gallery</h3>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="clear" disabled>Clear</button>
+      <button class="btn primary" id="zip" disabled>Photos .zip</button>
+    </div>
+    <div class="strip" id="strip"></div>
+  </div>
+
+  <p class="footnote">
+    Space = photo (hold = burst) · R = record · M = catch moment · ← → = browse · Esc = close<br>
+    Photos and videos are saved to this browser's storage as you shoot, so a reload won't lose them.
+    Tap an item to save it to your phone.
+  </p>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <div class="lb-bar">
+    <span class="lb-label" id="lbLabel">1 / 1</span>
+    <span class="spacer"></span>
+    <button class="btn ghost" id="lbClose">Close</button>
+  </div>
+  <div class="lb-stage">
+    <img id="lbImg" alt="Captured photo">
+    <video id="lbVideo" controls playsinline class="hidden"></video>
+    <button class="nav prev" id="lbPrev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="nav next" id="lbNext" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+  <div class="lb-markers hidden" id="lbMarkers"></div>
+  <div class="lb-actions">
+    <button class="btn primary" id="lbSave">Save</button>
+    <button class="btn hidden" id="lbShare">Share…</button>
+    <button class="btn danger" id="lbDel">Delete</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (s) { return document.querySelector(s); };
+  var el = {
+    video: $("#video"), stage: $("#stage"), flash: $("#flash"), grid: $("#grid"),
+    gridBtn: $("#gridBtn"), placeholder: $("#placeholder"), phTitle: $("#phTitle"),
+    phBody: $("#phBody"), startBtn: $("#startBtn"), count: $("#count"), meta: $("#meta"),
+    dot: $("#dot"), recChip: $("#recChip"), recText: $("#recText"), modeChip: $("#modeChip"),
+    shutter: $("#shutter"), recBtn: $("#recBtn"), momentBtn: $("#momentBtn"),
+    flip: $("#flip"), auto: $("#auto"), autoLbl: $("#autoLbl"), settingsBtn: $("#settingsBtn"),
+    settings: $("#settings"), zoomRow: $("#zoomRow"), zoom: $("#zoom"), zoomVal: $("#zoomVal"),
+    torchRow: $("#torchRow"), torchBtn: $("#torchBtn"), capsHint: $("#capsHint"),
+    storageInfo: $("#storageInfo"), strip: $("#strip"), clear: $("#clear"), zip: $("#zip"),
+    lb: $("#lightbox"), lbImg: $("#lbImg"), lbVideo: $("#lbVideo"), lbLabel: $("#lbLabel"),
+    lbPrev: $("#lbPrev"), lbNext: $("#lbNext"), lbSave: $("#lbSave"), lbShare: $("#lbShare"),
+    lbDel: $("#lbDel"), lbClose: $("#lbClose"), lbMarkers: $("#lbMarkers"), toast: $("#toast")
+  };
+
+  /* ------------------------------------------------------------- settings */
+
+  var cfg = (function () {
+    var d = { res: "1080", fps: "30", mic: "on", fmt: "auto", burst: "5", autoSec: "3", pre: "0", post: "3", hires: "off" };
+    try {
+      var s = JSON.parse(localStorage.getItem("multicam.cfg") || "{}");
+      for (var k in s) { if (Object.prototype.hasOwnProperty.call(d, k) && typeof s[k] === "string") d[k] = s[k]; }
+    } catch (e) {}
+    return d;
+  })();
+  function saveCfg() { try { localStorage.setItem("multicam.cfg", JSON.stringify(cfg)); } catch (e) {} }
+
+  var RES = { "720": [1280, 720], "1080": [1920, 1080], "4k": [3840, 2160] };
+  var RING_FPS = 5;
+
+  var state = {
+    stream: null, facing: "environment", started: false, starting: false,
+    items: [], seq: 0,
+    autoOn: false, autoTimer: null,
+    holdBurst: false, burstUntil: 0, burstTimer: null, burstTag: "burst", inflight: 0,
+    rec: null, recStarting: false,
+    lbIndex: 0, hiBusy: false, torch: false, hasAudio: false,
+    dims: { w: 0, h: 0, fps: 0 }
+  };
+
+  /* ---------------------------------------------------------------- utils */
+
+  var toastTimer = null;
+  function toast(msg, ms) {
+    el.toast.textContent = msg;
+    el.toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.toast.classList.remove("show"); }, ms || 2800);
+  }
+  function pad(n, w) { return String(n).padStart(w || 2, "0"); }
+  function stamp(t) {
+    var d = new Date(t || Date.now());
+    return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "-" +
+           pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  }
+  function fmtDur(ms) {
+    var s = Math.max(0, Math.round(ms / 1000));
+    return Math.floor(s / 60) + ":" + pad(s % 60);
+  }
+  function fmtBytes(b) {
+    if (b == null) return "?";
+    if (b < 1048576) return Math.max(1, Math.round(b / 1024)) + " KB";
+    if (b < 1073741824) return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + " MB";
+    return (b / 1073741824).toFixed(1) + " GB";
+  }
+  function setStatus(text, mode) {
+    el.meta.textContent = text;
+    el.dot.classList.toggle("live", mode === "live");
+    el.dot.classList.toggle("rec", mode === "rec");
+  }
+  function showPlaceholder(title, body, showButton) {
+    el.phTitle.textContent = title;
+    el.phBody.textContent = body;
+    el.startBtn.classList.toggle("hidden", !showButton);
+    el.placeholder.classList.add("show");
+  }
+  function hidePlaceholder() { el.placeholder.classList.remove("show"); }
+  function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function toBlobP(canvas, type, q) {
+    return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, type, q); });
+  }
+  function ready() { return !!(state.stream && el.video.videoWidth); }
+
+  var storageWarned = false;
+  function storageWarn(err) {
+    console.warn("storage error", err);
+    if (!storageWarned) {
+      storageWarned = true;
+      toast("⚠ Couldn't save to device storage (full or blocked). Download soon!", 6000);
+      setTimeout(function () { storageWarned = false; }, 20000);
+    }
+  }
+
+  /* ------------------------------------------------------------ IndexedDB */
+
+  var db = null;
+  function openDB() {
+    return new Promise(function (resolve) {
+      try {
+        var rq = indexedDB.open("multicam", 1);
+        rq.onupgradeneeded = function (e) {
+          var d = e.target.result;
+          d.createObjectStore("shots", { keyPath: "id" });
+          d.createObjectStore("vchunks", { keyPath: ["session", "idx"] });
+          d.createObjectStore("videos", { keyPath: "session" });
+        };
+        rq.onsuccess = function () { resolve(rq.result); };
+        rq.onerror = function () { resolve(null); };
+        rq.onblocked = function () { resolve(null); };
+      } catch (e) { resolve(null); }
+    });
+  }
+  function idbPut(store, val) {
+    return new Promise(function (resolve, reject) {
+      if (!db) return resolve();
+      try {
+        var t = db.transaction(store, "readwrite");
+        t.objectStore(store).put(val);
+        t.oncomplete = function () { resolve(); };
+        t.onerror = function () { reject(t.error); };
+        t.onabort = function () { reject(t.error); };
+      } catch (e) { reject(e); }
+    });
+  }
+  function idbDel(store, key) {
+    return new Promise(function (resolve) {
+      if (!db) return resolve();
+      try {
+        var t = db.transaction(store, "readwrite");
+        t.objectStore(store).delete(key);
+        t.oncomplete = function () { resolve(); };
+        t.onerror = function () { resolve(); };
+        t.onabort = function () { resolve(); };
+      } catch (e) { resolve(); }
+    });
+  }
+  function idbAll(store) {
+    return new Promise(function (resolve) {
+      if (!db) return resolve([]);
+      try {
+        var rq = db.transaction(store, "readonly").objectStore(store).getAll();
+        rq.onsuccess = function () { resolve(rq.result || []); };
+        rq.onerror = function () { resolve([]); };
+      } catch (e) { resolve([]); }
+    });
+  }
+  function idbChunkBlobs(session) {
+    return new Promise(function (resolve) {
+      if (!db) return resolve([]);
+      try {
+        var range = IDBKeyRange.bound([session, 0], [session, Number.MAX_SAFE_INTEGER]);
+        var rq = db.transaction("vchunks", "readonly").objectStore("vchunks").getAll(range);
+        rq.onsuccess = function () { resolve((rq.result || []).map(function (r) { return r.blob; })); };
+        rq.onerror = function () { resolve([]); };
+      } catch (e) { resolve([]); }
+    });
+  }
+  function idbDeleteVideo(session) {
+    return new Promise(function (resolve) {
+      if (!db) return resolve();
+      try {
+        var t = db.transaction(["vchunks", "videos"], "readwrite");
+        t.objectStore("vchunks").delete(IDBKeyRange.bound([session, 0], [session, Number.MAX_SAFE_INTEGER]));
+        t.objectStore("videos").delete(session);
+        t.oncomplete = function () { resolve(); };
+        t.onerror = function () { resolve(); };
+        t.onabort = function () { resolve(); };
+      } catch (e) { resolve(); }
+    });
+  }
+
+  var storageTimer = 0;
+  function refreshStorage() {
+    var now = Date.now();
+    if (now - storageTimer < 4000) return;
+    storageTimer = now;
+    try {
+      if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(function (e) {
+          el.storageInfo.textContent = "Stored in this browser: " + fmtBytes(e.usage) +
+            " (about " + fmtBytes(e.quota) + " available)." + (db ? "" : " ⚠ Persistent storage is unavailable — keep this tab open and download often.");
+        }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+
+  /* ---------------------------------------------------------------- items */
+
+  var renderQueued = false;
+  function scheduleRender() {
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(function () { renderQueued = false; renderGallery(); });
+  }
+
+  function addPhoto(blob, thumbBlob, w, h, t, tag) {
+    state.seq += 1;
+    var id = "p" + t + "-" + state.seq;
+    var name = "multicam-" + stamp(t) + "-" + pad(state.seq, 3) + ".jpg";
+    var item = {
+      key: id, type: "photo", t: t, name: name, blob: blob,
+      url: URL.createObjectURL(blob),
+      thumbUrl: thumbBlob ? URL.createObjectURL(thumbBlob) : null,
+      thumbBlob: thumbBlob || null, w: w, h: h, tag: tag || ""
+    };
+    state.items.push(item);
+    scheduleRender();
+    refreshStorage();
+    return idbPut("shots", { id: id, t: t, name: name, blob: blob, thumb: thumbBlob || null, w: w, h: h, tag: tag || "" }).catch(storageWarn);
+  }
+
+  function videoExt(mime) { return /mp4/i.test(mime || "") ? "mp4" : "webm"; }
+
+  function makeVideoItem(meta, blob) {
+    return {
+      key: meta.session, type: "video", t: meta.t, name: "multicam-" + stamp(meta.t) + "." + videoExt(meta.mime),
+      blob: blob, url: URL.createObjectURL(blob),
+      thumbBlob: meta.poster || null, thumbUrl: meta.poster ? URL.createObjectURL(meta.poster) : null,
+      w: meta.w, h: meta.h, dur: meta.dur || null, markers: (meta.markers || []).slice(), tag: "", session: meta.session
+    };
+  }
+
+  function sortItems() { state.items.sort(function (a, b) { return a.t - b.t; }); }
+
+  function revokeItem(it) {
+    try { if (it.url) URL.revokeObjectURL(it.url); } catch (e) {}
+    try { if (it.thumbUrl) URL.revokeObjectURL(it.thumbUrl); } catch (e) {}
+  }
+
+  async function loadFromDB() {
+    var shots = await idbAll("shots");
+    shots.forEach(function (s) {
+      state.seq += 1;
+      state.items.push({
+        key: s.id, type: "photo", t: s.t, name: s.name, blob: s.blob, url: URL.createObjectURL(s.blob),
+        thumbUrl: s.thumb ? URL.createObjectURL(s.thumb) : null, thumbBlob: s.thumb || null,
+        w: s.w, h: s.h, tag: s.tag || ""
+      });
+    });
+    var vids = await idbAll("videos");
+    var recovered = 0;
+    for (var i = 0; i < vids.length; i++) {
+      var meta = vids[i];
+      var chunks = await idbChunkBlobs(meta.session);
+      if (!chunks.length) { await idbDel("videos", meta.session); continue; }
+      var blob = new Blob(chunks, { type: (meta.mime || "video/webm").split(";")[0] });
+      if (!meta.ended) {
+        recovered += 1;
+        meta.ended = true;
+        idbPut("videos", meta).catch(function () {});
+      }
+      state.items.push(makeVideoItem(meta, blob));
+    }
+    sortItems();
+    renderGallery();
+    if (recovered) toast("Recovered " + recovered + " video" + (recovered > 1 ? "s" : "") + " from an interrupted session", 5000);
+    else if (state.items.length) toast("Restored " + state.items.length + " saved item" + (state.items.length > 1 ? "s" : ""), 2200);
+  }
+
+  /* --------------------------------------------------------------- gallery */
+
+  function renderGallery() {
+    var photos = 0, videos = 0;
+    state.items.forEach(function (it) { if (it.type === "video") videos++; else photos++; });
+    el.count.textContent = photos + (photos === 1 ? " photo" : " photos") +
+      (videos ? " · " + videos + (videos === 1 ? " video" : " videos") : "");
+    el.clear.disabled = state.items.length === 0;
+    el.zip.disabled = photos === 0;
+
+    el.strip.innerHTML = "";
+    if (!state.items.length) {
+      var note = document.createElement("div");
+      note.className = "empty-note";
+      note.textContent = "Nothing captured yet — tap the shutter or hit record.";
+      el.strip.appendChild(note);
+      return;
+    }
+    for (var i = state.items.length - 1; i >= 0; i--) {
+      (function (idx) {
+        var it = state.items[idx];
+        var btn = document.createElement("button");
+        btn.className = "thumb" + (it.type === "video" ? " vid" : "");
+        btn.title = it.name;
+        var img = document.createElement("img");
+        img.src = it.thumbUrl || (it.type === "photo" ? it.url : "");
+        img.alt = it.type === "video" ? "Video" : "Photo";
+        img.decoding = "async";
+        btn.appendChild(img);
+        var b = document.createElement("b");
+        b.textContent = it.type === "video" ? "▶ " + (it.dur ? fmtDur(it.dur) : "") : String(idx + 1);
+        btn.appendChild(b);
+        if (it.tag === "moment" || it.tag === "pre") {
+          var tg = document.createElement("b");
+          tg.className = "tag";
+          tg.textContent = it.tag === "moment" ? "★" : "pre";
+          btn.appendChild(tg);
+        }
+        btn.addEventListener("click", function () { openLightbox(idx); });
+        el.strip.appendChild(btn);
+      })(i);
+    }
+  }
+
+  /* -------------------------------------------------------------- lightbox */
+
+  function canShareItem(it) {
+    try {
+      if (!navigator.canShare || !navigator.share) return false;
+      var f = new File([it.blob], it.name, { type: (it.blob.type || "application/octet-stream").split(";")[0] });
+      return navigator.canShare({ files: [f] });
+    } catch (e) { return false; }
+  }
+
+  function fixDuration(v) {
+    v.addEventListener("loadedmetadata", function once() {
+      v.removeEventListener("loadedmetadata", once);
+      if (v.duration === Infinity) {
+        v.currentTime = 1e7;
+        v.addEventListener("timeupdate", function back() {
+          v.removeEventListener("timeupdate", back);
+          v.currentTime = 0;
+        });
+      }
+    });
+  }
+
+  function openLightbox(i) {
+    if (!state.items.length) return;
+    state.lbIndex = Math.max(0, Math.min(i, state.items.length - 1));
+    renderLightbox();
+    el.lb.classList.add("show");
+  }
+  function closeLightbox() {
+    try { el.lbVideo.pause(); } catch (e) {}
+    el.lb.classList.remove("show");
+  }
+
+  function renderLightbox() {
+    var it = state.items[state.lbIndex];
+    if (!it) { closeLightbox(); return; }
+    try { el.lbVideo.pause(); } catch (e) {}
+    el.lbMarkers.innerHTML = "";
+    el.lbMarkers.classList.add("hidden");
+
+    if (it.type === "video") {
+      el.lbImg.classList.add("hidden");
+      el.lbImg.removeAttribute("src");
+      el.lbVideo.classList.remove("hidden");
+      fixDuration(el.lbVideo);
+      el.lbVideo.src = it.url;
+      if (it.markers && it.markers.length) {
+        el.lbMarkers.classList.remove("hidden");
+        var lead = document.createElement("span");
+        lead.textContent = "Moments:";
+        el.lbMarkers.appendChild(lead);
+        it.markers.forEach(function (ms) {
+          var b = document.createElement("button");
+          b.className = "btn";
+          b.textContent = "★ " + fmtDur(ms);
+          b.addEventListener("click", function () {
+            try { el.lbVideo.currentTime = Math.max(0, ms / 1000 - 2); el.lbVideo.play(); } catch (e) {}
+          });
+          el.lbMarkers.appendChild(b);
+        });
+      }
+    } else {
+      el.lbVideo.classList.add("hidden");
+      el.lbVideo.removeAttribute("src");
+      el.lbVideo.load();
+      el.lbImg.classList.remove("hidden");
+      el.lbImg.src = it.url;
+    }
+
+    var kind = it.type === "video" ? "video" : "photo";
+    el.lbLabel.textContent = (state.lbIndex + 1) + " / " + state.items.length + " · " + kind + " · " +
+      (it.w || "?") + "×" + (it.h || "?") + " · " + fmtBytes(it.blob.size) +
+      (it.dur ? " · " + fmtDur(it.dur) : "");
+    var many = state.items.length > 1;
+    el.lbPrev.classList.toggle("hidden", !many);
+    el.lbNext.classList.toggle("hidden", !many);
+    el.lbShare.classList.toggle("hidden", !canShareItem(it));
+  }
+
+  function navLightbox(delta) {
+    var n = state.items.length;
+    if (n < 2) return;
+    state.lbIndex = (state.lbIndex + delta + n) % n;
+    renderLightbox();
+  }
+
+  async function deleteCurrent() {
+    var it = state.items[state.lbIndex];
+    if (!it) return;
+    var what = it.type === "video" ? "this video" : "this photo";
+    if (!confirm("Delete " + what + " from this device?")) return;
+    try { el.lbVideo.pause(); } catch (e) {}
+    revokeItem(it);
+    state.items.splice(state.lbIndex, 1);
+    if (it.type === "video") await idbDeleteVideo(it.session);
+    else await idbDel("shots", it.key);
+    renderGallery();
+    if (!state.items.length) { closeLightbox(); toast("Gallery empty"); return; }
+    if (state.lbIndex >= state.items.length) state.lbIndex = state.items.length - 1;
+    renderLightbox();
+    toast("Deleted", 1400);
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+
+  function saveCurrent() {
+    var it = state.items[state.lbIndex];
+    if (!it) return;
+    downloadBlob(it.blob, it.name);
+    toast("Saving " + it.name, 2200);
+  }
+
+  async function shareCurrent() {
+    var it = state.items[state.lbIndex];
+    if (!it) return;
+    try {
+      var f = new File([it.blob], it.name, { type: (it.blob.type || "application/octet-stream").split(";")[0] });
+      await navigator.share({ files: [f], title: it.name });
+    } catch (e) { /* cancelled */ }
+  }
+
+  async function clearAll() {
+    if (!state.items.length) return;
+    if (!confirm("Delete ALL " + state.items.length + " photos and videos from this device? This can't be undone.")) return;
+    var list = state.items.slice();
+    state.items = [];
+    for (var i = 0; i < list.length; i++) {
+      revokeItem(list[i]);
+      if (list[i].type === "video") await idbDeleteVideo(list[i].session);
+      else await idbDel("shots", list[i].key);
+    }
+    renderGallery();
+    closeLightbox();
+    toast("All cleared");
+  }
+
+  /* ------------------------------------------------------ zip (store only) */
+
+  var CRC_TABLE = (function () {
+    var t = new Uint32Array(256), c, n, k;
+    for (n = 0; n < 256; n++) {
+      c = n;
+      for (k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(bytes) {
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  function dosDateTime(d) {
+    var time = ((d.getHours() & 31) << 11) | ((d.getMinutes() & 63) << 5) | ((d.getSeconds() / 2) & 31);
+    var date = (((d.getFullYear() - 1980) & 127) << 9) | (((d.getMonth() + 1) & 15) << 5) | (d.getDate() & 31);
+    return { time: time & 0xFFFF, date: date & 0xFFFF };
+  }
+
+  async function buildZip(files) {
+    var enc = new TextEncoder();
+    var dt = dosDateTime(new Date());
+    var locals = [], centrals = [], offset = 0;
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      var nameBytes = enc.encode(f.name);
+      var data = new Uint8Array(await f.blob.arrayBuffer());
+      var crc = crc32(data);
+      var size = data.length;
+
+      var lh = new Uint8Array(30 + nameBytes.length);
+      var lv = new DataView(lh.buffer);
+      lv.setUint32(0, 0x04034b50, true);
+      lv.setUint16(4, 20, true);
+      lv.setUint16(6, 0x0800, true);
+      lv.setUint16(8, 0, true);
+      lv.setUint16(10, dt.time, true);
+      lv.setUint16(12, dt.date, true);
+      lv.setUint32(14, crc, true);
+      lv.setUint32(18, size, true);
+      lv.setUint32(22, size, true);
+      lv.setUint16(26, nameBytes.length, true);
+      lv.setUint16(28, 0, true);
+      lh.set(nameBytes, 30);
+
+      var ch = new Uint8Array(46 + nameBytes.length);
+      var cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, dt.time, true);
+      cv.setUint16(14, dt.date, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, size, true);
+      cv.setUint32(24, size, true);
+      cv.setUint16(28, nameBytes.length, true);
+      cv.setUint16(30, 0, true);
+      cv.setUint16(32, 0, true);
+      cv.setUint16(34, 0, true);
+      cv.setUint16(36, 0, true);
+      cv.setUint32(38, 0, true);
+      cv.setUint32(42, offset, true);
+      ch.set(nameBytes, 46);
+
+      locals.push(lh, data);
+      centrals.push(ch);
+      offset += lh.length + size;
+    }
+    var cdSize = centrals.reduce(function (a, c) { return a + c.length; }, 0);
+    var eocd = new Uint8Array(22);
+    var ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+    ev.setUint16(20, 0, true);
+    return new Blob(locals.concat(centrals, [eocd]), { type: "application/zip" });
+  }
+
+  async function downloadPhotosZip() {
+    var photos = state.items.filter(function (i) { return i.type === "photo"; });
+    if (!photos.length) return;
+    el.zip.disabled = true;
+    var original = el.zip.textContent;
+    el.zip.textContent = "Packing…";
+    try {
+      var zip = await buildZip(photos);
+      downloadBlob(zip, "multicam-" + stamp() + ".zip");
+      toast("Downloading " + photos.length + " photos", 2400);
+    } catch (e) {
+      toast("Could not build the archive");
+    } finally {
+      el.zip.textContent = original;
+      el.zip.disabled = false;
+    }
+  }
+
+  /* ---------------------------------------------------------------- camera */
+
+  function cameraSupported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
+
+  function stopStream() {
+    stopRing();
+    if (state.stream) {
+      state.stream.getTracks().forEach(function (t) { t.stop(); });
+      state.stream = null;
+    }
+    el.video.srcObject = null;
+  }
+
+  function explainError(err) {
+    var name = err && err.name ? err.name : "";
+    if (name === "NotAllowedError" || name === "SecurityError") return "Camera permission was blocked. Allow camera access in your browser's site settings, then press Start again.";
+    if (name === "NotFoundError" || name === "OverconstrainedError") return "No usable camera was found on this device.";
+    if (name === "NotReadableError") return "The camera is busy — another app or tab is probably using it.";
+    return "Could not open the camera" + (err && err.message ? ": " + err.message : ".");
+  }
+
+  function updateMirror() { el.video.style.transform = state.facing === "user" ? "scaleX(-1)" : "none"; }
+
+  function buildAttempts() {
+    var r = RES[cfg.res] || RES["1080"];
+    var fps = +cfg.fps || 30;
+    var vid = { facingMode: { ideal: state.facing }, width: { ideal: r[0] }, height: { ideal: r[1] }, frameRate: { ideal: fps } };
+    var aud = { echoCancellation: false, noiseSuppression: false, autoGainControl: true };
+    var list = [];
+    if (cfg.mic === "on") list.push({ audio: aud, video: vid });
+    list.push({ audio: false, video: vid });
+    list.push({ audio: false, video: { facingMode: { ideal: state.facing } } });
+    list.push({ audio: false, video: true });
+    return list;
+  }
+
+  var wake = null;
+  async function keepAwake() {
+    try {
+      if (navigator.wakeLock && !wake) {
+        wake = await navigator.wakeLock.request("screen");
+        wake.addEventListener("release", function () { wake = null; });
+      }
+    } catch (e) {}
+  }
+
+  async function startCamera() {
+    if (state.starting) return;
+    if (!cameraSupported()) {
+      showPlaceholder("Camera API unavailable",
+        "This page needs a secure context (https:// or localhost) to reach the camera. Host the file on an https URL or serve it locally.", false);
+      setStatus("unsupported");
+      return;
+    }
+    state.starting = true;
+    stopStream();
+    state.torch = false;
+    setStatus("connecting…");
+
+    var attempts = buildAttempts();
+    var firstErr = null, stream = null, usedIdx = -1;
+    for (var i = 0; i < attempts.length; i++) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(attempts[i]);
+        usedIdx = i;
+        break;
+      } catch (err) { if (!firstErr) firstErr = err; }
+    }
+    if (!stream) {
+      state.starting = false;
+      setStatus("camera blocked");
+      el.shutter.disabled = true; el.recBtn.disabled = true; el.momentBtn.disabled = true;
+      showPlaceholder("Camera unavailable", explainError(firstErr), true);
+      return;
+    }
+    if (cfg.mic === "on" && usedIdx > 0) toast("Microphone unavailable — video will have no sound", 4500);
+
+    state.stream = stream;
+    state.hasAudio = stream.getAudioTracks().length > 0;
+    el.video.srcObject = stream;
+    try { await el.video.play(); } catch (e) {}
+
+    var track = stream.getVideoTracks()[0];
+    track.addEventListener("ended", onTrackEnded);
+
+    state.started = true;
+    state.starting = false;
+    hidePlaceholder();
+    el.shutter.disabled = false;
+    el.recBtn.disabled = typeof MediaRecorder === "undefined";
+    el.momentBtn.disabled = false;
+
+    var settings = track && track.getSettings ? track.getSettings() : {};
+    if (settings.facingMode) state.facing = settings.facingMode;
+    updateMirror();
+
+    function showDims() {
+      var w = el.video.videoWidth || settings.width || 0;
+      var h = el.video.videoHeight || settings.height || 0;
+      var fps = Math.round(settings.frameRate || 0);
+      state.dims = { w: w, h: h, fps: fps };
+      if (w && h) el.stage.style.aspectRatio = w + " / " + h;
+      setStatus(w + "×" + h + (fps ? " · " + fps + "fps" : "") + (state.hasAudio ? " · 🎤" : ""), state.rec ? "rec" : "live");
+    }
+    if (el.video.videoWidth) showDims();
+    else el.video.addEventListener("loadedmetadata", function once() { el.video.removeEventListener("loadedmetadata", once); showDims(); });
+
+    setupCaps(track);
+    refreshFlipButton();
+    keepAwake();
+    startRing();
+    refreshStorage();
+  }
+
+  function onTrackEnded() {
+    if (state.rec) { stopRecording(); toast("Camera was interrupted — video saved up to that point", 6000); }
+    else toast("Camera stopped. Press Start camera to resume.", 5000);
+    stopRing();
+    state.started = false;
+    el.shutter.disabled = true; el.recBtn.disabled = true; el.momentBtn.disabled = true;
+    setStatus("camera stopped");
+    showPlaceholder("Camera stopped", "The browser or OS stopped the camera (screen lock, another app, or a permission change).", true);
+  }
+
+  async function refreshFlipButton() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) { el.flip.disabled = true; return; }
+    try {
+      var devices = await navigator.mediaDevices.enumerateDevices();
+      el.flip.disabled = devices.filter(function (d) { return d.kind === "videoinput"; }).length < 2;
+    } catch (e) { el.flip.disabled = false; }
+  }
+
+  async function flipCamera() {
+    if (el.flip.disabled) return;
+    if (state.rec) { toast("Stop recording before switching cameras"); return; }
+    state.facing = state.facing === "environment" ? "user" : "environment";
+    await startCamera();
+    toast(state.facing === "user" ? "Front camera" : "Rear camera", 1500);
+  }
+
+  function setupCaps(track) {
+    var caps = {};
+    try { caps = track.getCapabilities ? track.getCapabilities() : {}; } catch (e) {}
+    var s = {};
+    try { s = track.getSettings(); } catch (e) {}
+    var any = false;
+    if (caps.zoom && caps.zoom.max > caps.zoom.min) {
+      el.zoomRow.classList.remove("hidden");
+      el.zoom.min = caps.zoom.min; el.zoom.max = caps.zoom.max;
+      el.zoom.step = caps.zoom.step || 0.1;
+      el.zoom.value = s.zoom || caps.zoom.min;
+      el.zoomVal.textContent = (+el.zoom.value).toFixed(1) + "×";
+      any = true;
+    } else el.zoomRow.classList.add("hidden");
+    if (caps.torch) {
+      el.torchRow.classList.remove("hidden");
+      el.torchBtn.textContent = "Torch: off";
+      any = true;
+    } else el.torchRow.classList.add("hidden");
+    el.capsHint.classList.toggle("hidden", any);
+  }
+
+  function applyAdvanced(c) {
+    var track = state.stream && state.stream.getVideoTracks()[0];
+    if (!track) return Promise.resolve(false);
+    return track.applyConstraints({ advanced: [c] }).then(function () { return true; }).catch(function () { return false; });
+  }
+
+  /* --------------------------------------------------------------- capture */
+
+  var capCv = document.createElement("canvas");
+  var capCtx = capCv.getContext("2d");
+  var thCv = document.createElement("canvas");
+  var thCtx = thCv.getContext("2d");
+
+  // Snapshots the current frame synchronously, encodes asynchronously.
+  function grabFull(withThumb) {
+    var v = el.video, w = v.videoWidth, h = v.videoHeight;
+    if (!w || !h) return Promise.resolve(null);
+    var t = Date.now();
+    if (capCv.width !== w || capCv.height !== h) { capCv.width = w; capCv.height = h; }
+    capCtx.drawImage(v, 0, 0, w, h);
+    var pFull = toBlobP(capCv, "image/jpeg", 0.92);
+    var pThumb = Promise.resolve(null);
+    if (withThumb) {
+      var tw = 160, th = Math.max(1, Math.round(160 * h / w));
+      thCv.width = tw; thCv.height = th;
+      thCtx.drawImage(v, 0, 0, tw, th);
+      pThumb = toBlobP(thCv, "image/jpeg", 0.6);
+    }
+    return Promise.all([pFull, pThumb]).then(function (r) {
+      return r[0] ? { blob: r[0], thumb: r[1], w: w, h: h, t: t } : null;
+    });
+  }
+
+  async function thumbFromBlob(blob) {
+    try {
+      var bmp = await createImageBitmap(blob);
+      var tw = 160, th = Math.max(1, Math.round(160 * bmp.height / bmp.width));
+      thCv.width = tw; thCv.height = th;
+      thCtx.drawImage(bmp, 0, 0, tw, th);
+      bmp.close();
+      return await toBlobP(thCv, "image/jpeg", 0.6);
+    } catch (e) { return null; }
+  }
+
+  function flashScreen() {
+    el.flash.classList.remove("go");
+    void el.flash.offsetWidth;
+    el.flash.classList.add("go");
+  }
+
+  async function shoot(tag, quiet) {
+    if (!ready()) return;
+    var r = await grabFull(true);
+    if (!r) return;
+    await addPhoto(r.blob, r.thumb, r.w, r.h, r.t, tag);
+    if (!quiet) { flashScreen(); buzz(12); }
+  }
+
+  function hiresOK() { return typeof window.ImageCapture === "function"; }
+
+  async function shootHiRes() {
+    state.hiBusy = true;
+    try {
+      var track = state.stream.getVideoTracks()[0];
+      var ic = new window.ImageCapture(track);
+      var blob = await ic.takePhoto();
+      var bmp = await createImageBitmap(blob);
+      var w = bmp.width, h = bmp.height;
+      bmp.close();
+      var th = await thumbFromBlob(blob);
+      await addPhoto(blob, th, w, h, Date.now(), "");
+      flashScreen(); buzz(12);
+      return true;
+    } catch (e) {
+      toast("Hi-res photo failed — used a normal frame instead", 2500);
+      return false;
+    } finally { state.hiBusy = false; }
+  }
+
+  async function singleShot() {
+    if (!ready()) { toast("Camera isn't ready yet"); return; }
+    var bursting = state.holdBurst || Date.now() < state.burstUntil;
+    if (cfg.hires === "on" && hiresOK() && !state.rec && !bursting && !state.hiBusy) {
+      if (await shootHiRes()) return;
+    }
+    await shoot("", false);
+  }
+
+  /* ---------------------------------------------------------------- burst */
+
+  function updateMode() {
+    var now = Date.now(), msg = "";
+    if (now < state.burstUntil) msg = "★ Catching… " + Math.max(0, (state.burstUntil - now) / 1000).toFixed(1) + "s";
+    else if (state.holdBurst) msg = "Burst";
+    else if (state.autoOn) msg = "Auto · every " + cfg.autoSec + "s";
+    el.modeChip.textContent = msg;
+    el.modeChip.classList.toggle("hidden", !msg);
+    el.shutter.classList.toggle("burst", state.holdBurst || now < state.burstUntil);
+    el.shutter.classList.toggle("auto", state.autoOn && !state.holdBurst && now >= state.burstUntil);
+    el.momentBtn.classList.toggle("active", now < state.burstUntil);
+  }
+
+  function burstInterval() { return Math.max(60, Math.round(1000 / (+cfg.burst || 5))); }
+
+  function ensureBurstTimer() {
+    if (state.burstTimer) return;
+    state.burstTimer = setInterval(burstTick, burstInterval());
+  }
+  function burstTick() {
+    var now = Date.now();
+    var timed = now < state.burstUntil;
+    if (!state.holdBurst && !timed) {
+      clearInterval(state.burstTimer);
+      state.burstTimer = null;
+      updateMode();
+      return;
+    }
+    if (state.inflight < 3) {
+      state.inflight++;
+      shoot(timed ? "moment" : "burst", true).then(function () { state.inflight--; }, function () { state.inflight--; });
+    }
+    updateMode();
+  }
+
+  // shutter: tap = one photo, press-and-hold = burst
+  var holdTimer = null, holding = false;
+  function pressStart() {
+    if (el.shutter.disabled || holdTimer) return;
+    holding = false;
+    singleShot();
+    holdTimer = setTimeout(function () {
+      holdTimer = null;
+      holding = true;
+      state.holdBurst = true;
+      ensureBurstTimer();
+      buzz(18);
+      updateMode();
+    }, 380);
+  }
+  function pressEnd() {
+    if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+    if (holding) { holding = false; state.holdBurst = false; updateMode(); }
+  }
+
+  el.shutter.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    try { el.shutter.setPointerCapture(e.pointerId); } catch (err) {}
+    pressStart();
+  });
+  el.shutter.addEventListener("pointerup", pressEnd);
+  el.shutter.addEventListener("pointercancel", pressEnd);
+  el.shutter.addEventListener("lostpointercapture", pressEnd);
+  el.shutter.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  el.shutter.addEventListener("click", function (e) { if (e.detail === 0) singleShot(); }); // keyboard activation
+
+  /* ------------------------------------------------------------ auto mode */
+
+  function autoTick() { shoot("auto", false); }
+  function toggleAuto() {
+    if (!state.stream) { toast("Start the camera first"); return; }
+    state.autoOn = !state.autoOn;
+    el.auto.classList.toggle("active", state.autoOn);
+    clearInterval(state.autoTimer);
+    state.autoTimer = null;
+    if (state.autoOn) {
+      autoTick();
+      state.autoTimer = setInterval(autoTick, Math.round((+cfg.autoSec || 3) * 1000));
+      toast("Auto shooting every " + cfg.autoSec + " s", 1900);
+    } else toast("Auto shooting stopped", 1700);
+    updateMode();
+  }
+  function restartAuto() {
+    if (!state.autoOn) return;
+    clearInterval(state.autoTimer);
+    state.autoTimer = setInterval(autoTick, Math.round((+cfg.autoSec || 3) * 1000));
+  }
+
+  /* ------------------------------------------------------ pre-roll buffer */
+
+  var ring = [], ringTimer = null, ringBusy = false;
+  function stopRing() {
+    if (ringTimer) { clearInterval(ringTimer); ringTimer = null; }
+    ring = [];
+  }
+  function startRing() {
+    stopRing();
+    var sec = +cfg.pre;
+    if (!sec || !state.stream) return;
+    ringTimer = setInterval(ringTick, Math.round(1000 / RING_FPS));
+  }
+  async function ringTick() {
+    if (ringBusy || !el.video.videoWidth) return;
+    ringBusy = true;
+    try {
+      var r = await grabFull(false);
+      if (r) {
+        ring.push(r);
+        var cutoff = Date.now() - (+cfg.pre * 1000) - 300;
+        while (ring.length && ring[0].t < cutoff) ring.shift();
+      }
+    } catch (e) {} finally { ringBusy = false; }
+  }
+  async function flushPreroll() {
+    var frames = ring.splice(0, ring.length);
+    for (var i = 0; i < frames.length; i++) {
+      var f = frames[i];
+      var th = await thumbFromBlob(f.blob);
+      await addPhoto(f.blob, th, f.w, f.h, f.t, "pre");
+    }
+    if (frames.length) { sortItems(); scheduleRender(); }
+    return frames.length;
+  }
+
+  /* ------------------------------------------------------------- recording */
+
+  function pickMime() {
+    var mp4 = ["video/mp4;codecs=avc1", "video/mp4"];
+    var webm = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
+    var order = cfg.fmt === "webm" ? webm.concat(mp4) : cfg.fmt === "mp4" ? mp4.concat(webm) : mp4.concat(webm);
+    for (var i = 0; i < order.length; i++) {
+      try { if (MediaRecorder.isTypeSupported(order[i])) return order[i]; } catch (e) {}
+    }
+    return "";
+  }
+
+  function updateRecUI() {
+    var rec = state.rec;
+    el.recBtn.classList.toggle("on", !!rec);
+    el.stage.classList.toggle("is-rec", !!rec);
+    el.recChip.classList.toggle("hidden", !rec);
+    el.recBtn.title = rec ? "Stop video" : "Start video";
+    if (rec) {
+      el.recText.textContent = "REC " + fmtDur(Date.now() - rec.t0) + " · " + fmtBytes(rec.bytes);
+      setStatus(state.dims.w + "×" + state.dims.h + " · recording", "rec");
+    } else if (state.stream) {
+      setStatus(state.dims.w + "×" + state.dims.h + (state.dims.fps ? " · " + state.dims.fps + "fps" : "") + (state.hasAudio ? " · 🎤" : ""), "live");
+    }
+  }
+
+  async function startRecording() {
+    if (!state.stream || state.rec || state.recStarting) return;
+    if (typeof MediaRecorder === "undefined") { toast("Video recording isn't supported in this browser"); return; }
+    state.recStarting = true;
+    try {
+      var mime = pickMime();
+      var track = state.stream.getVideoTracks()[0];
+      var st = track.getSettings ? track.getSettings() : {};
+      var w = st.width || el.video.videoWidth, h = st.height || el.video.videoHeight, fps = st.frameRate || 30;
+      var bps = Math.max(4e6, Math.min(60e6, Math.round(w * h * fps * 0.12)));
+      var opts = { videoBitsPerSecond: bps };
+      if (mime) opts.mimeType = mime;
+
+      var mr;
+      try { mr = new MediaRecorder(state.stream, opts); }
+      catch (e) {
+        try { mr = new MediaRecorder(state.stream); }
+        catch (e2) { toast("Couldn't start video recording on this device"); return; }
+      }
+
+      var poster = null;
+      try { var pg = await grabFull(true); if (pg) poster = pg.thumb; } catch (e) {}
+
+      var t0 = Date.now();
+      var finalMime = (mr.mimeType || mime || "video/webm");
+      var rec = {
+        mr: mr, session: "v" + t0, idx: 0, pending: [], mem: [], bytes: 0, t0: t0, markers: [],
+        mime: finalMime, timer: null,
+        meta: { session: "v" + t0, t: t0, mime: finalMime, w: w, h: h, fps: Math.round(fps), markers: [], ended: false, dur: 0, poster: poster }
+      };
+      mr.ondataavailable = function (e) {
+        if (!e.data || !e.data.size) return;
+        var i = rec.idx++;
+        rec.bytes += e.data.size;
+        rec.mem.push(e.data);
+        rec.pending.push(idbPut("vchunks", { session: rec.session, idx: i, blob: e.data }).catch(storageWarn));
+        refreshStorage();
+      };
+      mr.onstop = function () { finalizeRecording(rec); };
+      mr.onerror = function () { toast("Recorder error — stopping video", 4000); try { stopRecording(); } catch (e) {} };
+
+      await idbPut("videos", rec.meta).catch(storageWarn);
+      mr.start(1000);
+      state.rec = rec;
+      rec.timer = setInterval(updateRecUI, 500);
+      updateRecUI();
+      buzz(25);
+      toast("Recording", 1200);
+    } finally { state.recStarting = false; }
+  }
+
+  function stopRecording() {
+    var rec = state.rec;
+    if (!rec) return;
+    try { if (rec.mr.state !== "inactive") rec.mr.stop(); else finalizeRecording(rec); } catch (e) { finalizeRecording(rec); }
+  }
+
+  var finalizing = {};
+  async function finalizeRecording(rec) {
+    if (finalizing[rec.session]) return;
+    finalizing[rec.session] = true;
+    clearInterval(rec.timer);
+    try { await Promise.allSettled(rec.pending); } catch (e) {}
+    var dur = Date.now() - rec.t0;
+    if (state.rec === rec) state.rec = null;
+    updateRecUI();
+    if (!rec.mem.length) {
+      toast("Recording was empty", 3000);
+      idbDeleteVideo(rec.session);
+      return;
+    }
+    var blob = new Blob(rec.mem, { type: rec.mime.split(";")[0] });
+    rec.meta.ended = true;
+    rec.meta.dur = dur;
+    rec.meta.markers = rec.markers.slice();
+    idbPut("videos", rec.meta).catch(storageWarn);
+    state.items.push(makeVideoItem(rec.meta, blob));
+    sortItems();
+    renderGallery();
+    refreshStorage();
+    toast("Video saved · " + fmtDur(dur) + " · " + fmtBytes(blob.size), 3500);
+  }
+
+  function toggleRecording() {
+    if (!state.stream) { toast("Start the camera first"); return; }
+    if (state.rec) stopRecording(); else startRecording();
+  }
+
+  function markVideo() {
+    var rec = state.rec;
+    if (!rec) return;
+    rec.markers.push(Date.now() - rec.t0);
+    rec.meta.markers = rec.markers.slice();
+    idbPut("videos", rec.meta).catch(function () {});
+  }
+
+  /* ---------------------------------------------------------- catch moment */
+
+  async function catchMoment() {
+    if (!ready()) { toast("Camera isn't ready yet"); return; }
+    buzz([30, 40, 30]);
+    // 1) rescue the pre-roll frames right away
+    var pre = flushPreroll();
+    // 2) burst for the next few seconds
+    state.burstUntil = Date.now() + (+cfg.post || 3) * 1000;
+    ensureBurstTimer();
+    burstTick();
+    updateMode();
+    // 3) make sure video is rolling, and drop a marker on it
+    if (!state.rec) await startRecording();
+    markVideo();
+    var n = await pre;
+    toast(n ? "Moment caught — saved last " + cfg.pre + "s of frames + burst" : "Moment caught — burst + video marker", 2600);
+  }
+
+  /* ---------------------------------------------------------------- wiring */
+
+  el.startBtn.addEventListener("click", startCamera);
+  el.recBtn.addEventListener("click", toggleRecording);
+  el.momentBtn.addEventListener("click", catchMoment);
+  el.flip.addEventListener("click", flipCamera);
+  el.auto.addEventListener("click", toggleAuto);
+  el.gridBtn.addEventListener("click", function () {
+    el.grid.classList.toggle("on");
+    el.gridBtn.classList.toggle("on", el.grid.classList.contains("on"));
+  });
+  el.settingsBtn.addEventListener("click", function () {
+    var open = el.settings.classList.toggle("hidden") === false;
+    el.settingsBtn.classList.toggle("active", open);
+    if (open) { storageTimer = 0; refreshStorage(); }
+  });
+  el.clear.addEventListener("click", clearAll);
+  el.zip.addEventListener("click", downloadPhotosZip);
+  el.lbClose.addEventListener("click", closeLightbox);
+  el.lbPrev.addEventListener("click", function () { navLightbox(-1); });
+  el.lbNext.addEventListener("click", function () { navLightbox(1); });
+  el.lbSave.addEventListener("click", saveCurrent);
+  el.lbShare.addEventListener("click", shareCurrent);
+  el.lbDel.addEventListener("click", deleteCurrent);
+
+  el.zoom.addEventListener("input", function () {
+    var v = +el.zoom.value;
+    el.zoomVal.textContent = v.toFixed(1) + "×";
+    applyAdvanced({ zoom: v });
+  });
+  el.torchBtn.addEventListener("click", async function () {
+    var next = !state.torch;
+    var ok = await applyAdvanced({ torch: next });
+    if (ok) { state.torch = next; el.torchBtn.textContent = "Torch: " + (next ? "on" : "off"); }
+    else toast("Torch isn't available right now");
+  });
+
+  var fieldMap = { sRes: "res", sFps: "fps", sMic: "mic", sFmt: "fmt", sBurst: "burst", sAuto: "autoSec", sPre: "pre", sPost: "post", sHires: "hires" };
+  var camKeys = { res: 1, fps: 1, mic: 1 };
+  Object.keys(fieldMap).forEach(function (id) {
+    var sel = $("#" + id), key = fieldMap[id];
+    sel.value = cfg[key];
+    if (sel.value !== cfg[key]) { sel.selectedIndex = 0; cfg[key] = sel.value; }
+    sel.addEventListener("change", function () {
+      if (camKeys[key] && state.rec) { toast("Stop recording to change this"); sel.value = cfg[key]; return; }
+      cfg[key] = sel.value;
+      saveCfg();
+      if (camKeys[key]) { if (state.started) startCamera(); }
+      else if (key === "pre") startRing();
+      else if (key === "autoSec") restartAuto();
+      else if (key === "burst" && state.burstTimer) { clearInterval(state.burstTimer); state.burstTimer = null; ensureBurstTimer(); }
+      updateMode();
+    });
+  });
+
+  el.lb.addEventListener("click", function (e) { if (e.target === el.lb) closeLightbox(); });
+
+  var spaceDown = false;
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "select" || tag === "input") return;
+    if (el.lb.classList.contains("show")) {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") navLightbox(-1);
+      if (e.key === "ArrowRight") navLightbox(1);
+      return;
+    }
+    if (!state.stream) return;
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (!spaceDown) { spaceDown = true; pressStart(); }
+    } else if (e.key === "r" || e.key === "R") toggleRecording();
+    else if (e.key === "m" || e.key === "M") catchMoment();
+  });
+  document.addEventListener("keyup", function (e) {
+    if (e.code === "Space") { spaceDown = false; pressEnd(); }
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+      keepAwake();
+      if (state.stream) {
+        var t = state.stream.getVideoTracks()[0];
+        if (t && t.readyState === "ended") onTrackEnded();
+        else if (state.rec) toast("Still recording", 1500);
+      }
+    } else if (state.rec) {
+      // Browsers may pause the camera while the page is hidden.
+    }
+  });
+
+  window.addEventListener("beforeunload", function (e) {
+    if (state.rec) { e.preventDefault(); e.returnValue = ""; return ""; }
+  });
+  window.addEventListener("pagehide", function () {
+    if (state.rec) { try { state.rec.mr.stop(); } catch (e) {} }
+    stopStream();
+  });
+
+  if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+    navigator.mediaDevices.addEventListener("devicechange", refreshFlipButton);
+  }
+
+  /* --------------------------------------------------------------- startup */
+
+  renderGallery();
+  updateMirror();
+  updateMode();
+
+  if (typeof MediaRecorder === "undefined") {
+    el.recBtn.title = "Video recording isn't supported in this browser";
+  }
+
+  (async function init() {
+    db = await openDB();
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+    if (db) {
+      try { await loadFromDB(); } catch (e) { console.warn(e); }
+    } else {
+      toast("Persistent storage unavailable — download your shots often", 4500);
+    }
+    refreshStorage();
+  })();
+
+  if (!cameraSupported()) {
+    showPlaceholder("Camera API unavailable",
+      "This page needs a secure context (https:// or localhost) to reach the camera. Host the file or serve it locally, then reload.", false);
+    setStatus("unsupported");
+  }
+})();
+</script>
+</body>
+</html>
