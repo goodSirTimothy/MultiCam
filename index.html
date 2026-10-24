@@ -132,8 +132,8 @@
   .placeholder .glyph svg{width:26px;height:26px;stroke:#b7a4ff;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 
   /* ---------- controls ---------- */
-  .controls{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:start;justify-items:center;gap:6px}
-  .cwrap{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0}
+  .controls{display:flex;align-items:flex-start;justify-content:space-around;gap:6px}
+  .cwrap{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;flex:1 1 0}
   .cwrap label{font-size:11px;color:var(--dim);text-align:center;line-height:1.25}
   .ctrl{
     width:60px;height:60px;border-radius:18px;
@@ -264,6 +264,74 @@
   }
   @keyframes fring{from{transform:scale(1.5);opacity:.2}to{transform:scale(1);opacity:1}}
 
+  /* ---------- feature switches ---------- */
+  .no-flip [data-feat="flip"],.no-fullscreen [data-feat="fullscreen"],.no-lock [data-feat="lock"],
+  .no-timer [data-feat="timer"],.no-autocatch [data-feat="autocatch"],.no-vitals [data-feat="vitals"],
+  .no-moment [data-feat="moment"],.no-editor [data-feat="editor"]{display:none !important}
+  .fgroup{margin:14px 0 6px;font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+  .fgroup:first-of-type{margin-top:4px}
+  .frow{
+    display:flex;align-items:center;gap:12px;padding:11px 12px;margin-bottom:6px;cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px
+  }
+  .frow .ftxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .frow b{font-size:14px;font-weight:650}
+  .frow small{font-size:12px;color:var(--dim);line-height:1.35}
+  .frow.off b{color:var(--dim)}
+  .sw{
+    -webkit-appearance:none;appearance:none;flex:0 0 auto;width:46px;height:28px;border-radius:99px;
+    background:#2c2c40;position:relative;cursor:pointer;margin:0;transition:background .18s;border:1px solid var(--line)
+  }
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .18s}
+  .sw:checked{background:var(--accent);border-color:transparent}
+  .sw:checked::after{transform:translateX(18px)}
+
+  /* ---------- editor ---------- */
+  .editor{
+    position:fixed;inset:0;z-index:60;display:none;flex-direction:column;gap:10px;background:#07070d;
+    padding:calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+    -webkit-user-select:none;user-select:none
+  }
+  .editor.show{display:flex}
+  .ed-top{display:flex;align-items:center;gap:8px}
+  .ed-top h3{margin:0;font-size:14px;font-weight:650;flex:1;text-align:center}
+  .ed-stage{
+    flex:1 1 0;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;
+    background:#000;border:1px solid var(--line);border-radius:14px;overflow:hidden
+  }
+  .ed-stage canvas{max-width:100%;max-height:100%;display:block;touch-action:none;cursor:grab}
+  .ed-playrow{display:flex;align-items:center;gap:10px;justify-content:center}
+  .ed-tabs{display:flex;gap:6px;justify-content:center}
+  .ed-panel{max-height:32vh;overflow-y:auto;overscroll-behavior:contain;padding:2px;flex-shrink:0}
+  .ed-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .ed-row .btn.on{background:var(--accent);border-color:transparent;color:#fff}
+  .ed-slider{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .ed-slider span{width:74px;color:var(--dim)}
+  .ed-slider input{flex:1;accent-color:var(--accent)}
+  .ed-slider b{width:52px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px}
+  .ed-filters{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+  .ed-f{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;color:var(--dim);font:inherit;font-size:11px;font-weight:600;cursor:pointer;padding:0}
+  .ed-f canvas{width:64px;height:64px;border-radius:12px;border:2px solid transparent;background:#000}
+  .ed-f.on canvas{border-color:var(--accent)}
+  .ed-f.on{color:#fff}
+  .ed-actions{display:flex;gap:8px}
+  .ed-actions .btn{flex:1;padding:12px}
+  .ed-busy{position:absolute;inset:0;background:rgba(6,6,12,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:2;padding:24px;text-align:center}
+  .ed-busy.show{display:flex}
+  .ed-bar{width:min(320px,80%);height:8px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
+  .ed-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+
+  /* ---------- zoom presets ---------- */
+  .zbar{
+    position:absolute;left:50%;bottom:46px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;
+    border-radius:999px;background:rgba(10,10,18,.58);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14)
+  }
+  .zbar button{
+    min-width:40px;height:34px;padding:0 9px;border:0;border-radius:999px;background:transparent;color:#fff;
+    font:inherit;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer
+  }
+  .zbar button.on{background:var(--accent)}
+
   /* ---------- self-timer + zoom ---------- */
   .chip.tc{top:10px;left:50%;transform:translateX(-50%)}
   .icon-btn .tag{position:absolute;right:3px;bottom:2px;font-size:9px;font-weight:800;line-height:1}
@@ -376,25 +444,26 @@
 
     <div class="chip tl" id="count">0 photos</div>
     <div class="chip tl2 hidden" id="recChip"><i class="rd"></i><span id="recText">REC 0:00</span></div>
-    <button class="icon-btn" id="flip" title="Switch camera" aria-label="Switch camera" disabled>
+    <button class="icon-btn" data-feat="flip" id="flip" title="Switch camera" aria-label="Switch camera" disabled>
       <svg viewBox="0 0 24 24"><path d="M4 9a8 8 0 0 1 13.5-4M20 15a8 8 0 0 1-13.5 4"/><path d="M17 3v4h-4M7 21v-4h4"/></svg>
     </button>
-    <button class="icon-btn" id="fsBtn" style="top:56px" title="Full screen" aria-label="Full screen">
+    <button class="icon-btn" data-feat="fullscreen" id="fsBtn" style="top:56px" title="Full screen" aria-label="Full screen">
       <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
     </button>
     <div class="focus-ring" id="focusRing"></div>
-    <button class="icon-btn" id="lockBtn" style="top:102px" title="Lock touch controls" aria-label="Lock touch controls">
+    <button class="icon-btn" data-feat="lock" id="lockBtn" style="top:102px" title="Lock touch controls" aria-label="Lock touch controls">
       <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
     </button>
-    <button class="icon-btn" id="timerBtn" style="top:148px" title="Self-timer" aria-label="Self-timer">
+    <button class="icon-btn" data-feat="timer" id="timerBtn" style="top:148px" title="Self-timer" aria-label="Self-timer">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7"/><path d="M12 10v4l2.5 1.5M9.5 3.5h5"/></svg><b class="tag" id="timerTag"></b>
     </button>
-    <button class="icon-btn" id="armBtn" style="top:194px" title="Arm auto-catch (sound / motion)" aria-label="Arm auto-catch">
+    <button class="icon-btn" data-feat="autocatch" id="armBtn" style="top:194px" title="Arm auto-catch (sound / motion)" aria-label="Arm auto-catch">
       <svg viewBox="0 0 24 24"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>
     </button>
     <div class="chip tc hidden" id="zoomChip"></div>
     <div class="countdown hidden" id="countdown"><b id="cdNum">3</b><span id="cdSub"></span></div>
-    <div class="chip bl hidden" id="vitals"></div>
+    <div class="zbar hidden" id="zbar"></div>
+    <div class="chip bl hidden" data-feat="vitals" id="vitals"></div>
     <div class="chip bc hidden" id="modeChip"></div>
 
     <div class="placeholder show" id="placeholder">
@@ -416,7 +485,7 @@
       <button class="shutter" id="shutter" title="Photo (hold for burst)" aria-label="Capture photo" disabled><span></span></button>
       <label>Photo · hold = burst</label>
     </div>
-    <div class="cwrap">
+    <div class="cwrap" data-feat="moment">
       <button class="ctrl momentbtn" id="momentBtn" title="Catch the moment" aria-label="Catch the moment" disabled>
         <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>
       </button>
@@ -441,6 +510,7 @@
     <div class="tabs">
       <button class="tab active" id="tabOptions">Options</button>
       <button class="tab" id="tabGallery">Gallery</button>
+      <button class="tab" id="tabFeatures">Features</button>
       <span class="spacer"></span>
       <button class="btn" id="sheetClose">Done</button>
     </div>
@@ -450,6 +520,12 @@
       <div class="quick">
         <button class="pill" id="auto" title="Take a photo every few seconds">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span id="autoLbl">Auto shoot</span>
+        </button>
+        <button class="pill hidden" id="zoomModeBtn" title="Switch between pinch and preset zoom">
+          <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M8 10.5h5M10.5 8v5"/></svg><span id="zoomModeLbl">Zoom: Pinch</span>
+        </button>
+        <button class="pill" id="geoBtn" title="Add GPS location to photo metadata">
+          <svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span id="geoLbl">Location: Off</span>
         </button>
         <button class="pill" id="gridBtn">
           <svg viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Grid
@@ -488,16 +564,21 @@
       <label class="field">Catch-moment burst lasts
         <select id="sPost"><option value="2">2 s</option><option value="3">3 s</option><option value="5">5 s</option><option value="10">10 s</option></select>
       </label>
-      <label class="field">Self-timer (photo &amp; video)
+      <label class="field" data-feat="timer">Self-timer (photo &amp; video)
           <select id="sTimer"><option value="0">Off</option><option value="3">3 s</option><option value="5">5 s</option><option value="10">10 s</option></select>
+        </label>
+        <label class="field">Location in photo metadata
+          <select id="sGeo"><option value="off">Off</option><option value="on">On</option></select>
         </label>
         <label class="field">Hi-res single photos
         <select id="sHires"><option value="off">Off (safe)</option><option value="on">On (when not recording)</option></select>
       </label>
     </div>
 
-    <div class="sec">Auto-catch</div>
-    <div class="sgrid">
+    <p class="hint" id="geoHint"></p>
+
+    <div class="sec" data-feat="autocatch">Auto-catch</div>
+    <div class="sgrid" data-feat="autocatch">
       <label class="field">Trigger on
         <select id="sTrig"><option value="sound">Loud sound</option><option value="motion">Sudden motion</option><option value="both">Sound or motion</option></select>
       </label>
@@ -508,17 +589,22 @@
         <select id="sCool"><option value="5">5 s</option><option value="15">15 s</option><option value="30">30 s</option><option value="60">60 s</option></select>
       </label>
     </div>
-    <p class="hint">Arm it with the eye button on the view. When it hears a loud noise or sees sudden movement it fires Catch moment by itself. Sound needs the microphone on; for motion keep the phone steady (a tripod is ideal).</p>
+    <p class="hint" data-feat="autocatch">Arm it with the eye button on the view. When it hears a loud noise or sees sudden movement it fires Catch moment by itself. Sound needs the microphone on; for motion keep the phone steady (a tripod is ideal).</p>
 
-    <div class="sec">Safety</div>
-    <div class="sgrid">
+    <div class="sec" data-feat="lock">Safety</div>
+    <div class="sgrid" data-feat="lock">
       <label class="field">Auto-lock when recording starts
         <select id="sLock"><option value="off">Off</option><option value="on">On</option></select>
       </label>
     </div>
-    <p class="hint">The padlock button on the view blocks every tap so a bump can't stop the recording. Hold the unlock button for about a second to release it.</p>
+    <p class="hint" data-feat="lock">The padlock button on the view blocks every tap so a bump can't stop the recording. Hold the unlock button for about a second to release it.</p>
 
     <div class="sec">Camera</div>
+    <div class="sgrid hidden" id="zoomModeRow">
+      <label class="field">Zoom control
+        <select id="sZoomMode"><option value="pinch">Pinch</option><option value="presets">Preset buttons</option><option value="both">Both</option></select>
+      </label>
+    </div>
     <div class="row hidden" id="zoomRow"><span>Zoom</span><input type="range" id="zoom" min="1" max="1" step="0.1" value="1"><b id="zoomVal">1×</b></div>
     <div class="row hidden" id="torchRow"><button class="btn" id="torchBtn">Torch: off</button></div>
       <div class="row hidden" id="expRow"><span>Exposure</span><input type="range" id="exp" min="0" max="0" step="0.1" value="0"><b id="expVal">0</b></div>
@@ -531,6 +617,8 @@
     Tap an item to save it to your phone.
   </p>
     </div>
+
+    <div class="pane hidden" id="paneFeatures"></div>
 
     <div class="pane hidden" id="paneGallery">
     <div class="panel-head">
@@ -564,8 +652,69 @@
   </div>
   <div class="lb-actions">
     <button class="btn primary" id="lbSave">Save</button>
+    <button class="btn" id="lbEdit" data-feat="editor">Edit</button>
     <button class="btn hidden" id="lbShare">Share…</button>
     <button class="btn danger" id="lbDel">Delete</button>
+  </div>
+</div>
+
+<div class="editor" id="editor" aria-hidden="true">
+  <div class="ed-top">
+    <button class="btn" id="edCancel">Cancel</button>
+    <h3 id="edTitle">Edit</h3>
+    <button class="btn ghost" id="edReset">Reset</button>
+  </div>
+  <div class="ed-stage" id="edStage"><canvas id="edCanvas"></canvas></div>
+  <div class="ed-playrow hidden" id="edPlayRow">
+    <button class="btn" id="edPlay">▶ Play</button>
+    <span class="lb-label" id="edTime">0:00.0</span>
+  </div>
+  <div class="ed-tabs" id="edTabs">
+    <button class="tab active" data-tab="crop">Crop</button>
+    <button class="tab" data-tab="adjust">Adjust</button>
+    <button class="tab" data-tab="filters">Filters</button>
+    <button class="tab hidden" data-tab="trim">Trim</button>
+  </div>
+  <div class="ed-panel" data-panel="crop">
+    <div class="ed-row" id="edAspects">
+      <button class="btn on" data-a="0">Original</button>
+      <button class="btn" data-a="1">1:1</button>
+      <button class="btn" data-a="1.3333">4:3</button>
+      <button class="btn" data-a="1.5">3:2</button>
+      <button class="btn" data-a="1.7778">16:9</button>
+      <button class="btn" data-a="0.5625">9:16</button>
+    </div>
+    <div class="ed-row">
+      <button class="btn" id="edRotL">⟲ Rotate</button>
+      <button class="btn" id="edRotR">Rotate ⟳</button>
+      <button class="btn" id="edFlip">⇋ Flip</button>
+    </div>
+    <div class="ed-slider"><span>Zoom</span><input type="range" id="edZoom" min="1" max="4" step="0.01" value="1"><b id="edZoomV">1.0×</b></div>
+    <p class="hint" style="margin:4px 0 0">Zoom in, then drag the picture to choose what stays in frame.</p>
+  </div>
+  <div class="ed-panel hidden" data-panel="adjust">
+    <div class="ed-slider"><span>Brightness</span><input type="range" id="edBright" min="-100" max="100" step="1" value="0"><b></b></div>
+    <div class="ed-slider"><span>Contrast</span><input type="range" id="edContrast" min="-100" max="100" step="1" value="0"><b></b></div>
+    <div class="ed-slider"><span>Saturation</span><input type="range" id="edSat" min="-100" max="100" step="1" value="0"><b></b></div>
+    <div class="ed-slider"><span>Warmth</span><input type="range" id="edWarm" min="-100" max="100" step="1" value="0"><b></b></div>
+  </div>
+  <div class="ed-panel hidden" data-panel="filters">
+    <div class="ed-filters" id="edFilters"></div>
+  </div>
+  <div class="ed-panel hidden" data-panel="trim">
+    <div class="ed-slider"><span>Start</span><input type="range" id="edT0" min="0" max="1" step="0.05" value="0"><b id="edT0V">0:00.0</b></div>
+    <div class="ed-slider"><span>End</span><input type="range" id="edT1" min="0" max="1" step="0.05" value="1"><b id="edT1V">0:00.0</b></div>
+    <label class="frow"><span class="ftxt"><b>Remove audio</b><small>Export the clip without sound.</small></span><input type="checkbox" class="sw" id="edMute"></label>
+    <p class="hint" id="edTrimInfo" style="margin:4px 0 0"></p>
+  </div>
+  <div class="ed-actions">
+    <button class="btn primary" id="edSaveCopy">Save as copy</button>
+    <button class="btn danger" id="edReplace">Replace original</button>
+  </div>
+  <div class="ed-busy" id="edBusy">
+    <div id="edBusyText" style="font-weight:650">Saving…</div>
+    <div class="ed-bar"><i id="edBar"></i></div>
+    <button class="btn" id="edBusyCancel">Cancel</button>
   </div>
 </div>
 
@@ -588,7 +737,7 @@
     dot: $("#dot"), recChip: $("#recChip"), recText: $("#recText"), modeChip: $("#modeChip"),
     shutter: $("#shutter"), recBtn: $("#recBtn"), momentBtn: $("#momentBtn"),
     flip: $("#flip"), auto: $("#auto"), autoLbl: $("#autoLbl"),
-    installBtn: $("#installBtn"), armBtn: $("#armBtn"), lbVidTools: $("#lbVidTools"), lbBack: $("#lbBack"), lbGrab: $("#lbGrab"), lbFwd: $("#lbFwd"), timerBtn: $("#timerBtn"), timerTag: $("#timerTag"), zoomChip: $("#zoomChip"), countdown: $("#countdown"), cdNum: $("#cdNum"), cdSub: $("#cdSub"), vitals: $("#vitals"), lockBtn: $("#lockBtn"), lockOv: $("#lockOv"), unlockBtn: $("#unlockBtn"), focusRing: $("#focusRing"), fsBtn: $("#fsBtn"), expRow: $("#expRow"), exp: $("#exp"), expVal: $("#expVal"), sheet: $("#sheet"), sheetClose: $("#sheetClose"), menuBtn: $("#menuBtn"), galleryBtn: $("#galleryBtn"), galCount: $("#galCount"), tabOptions: $("#tabOptions"), tabGallery: $("#tabGallery"), paneOptions: $("#paneOptions"), paneGallery: $("#paneGallery"), zoomRow: $("#zoomRow"), zoom: $("#zoom"), zoomVal: $("#zoomVal"),
+    installBtn: $("#installBtn"), geoBtn: $("#geoBtn"), geoLbl: $("#geoLbl"), geoHint: $("#geoHint"), zbar: $("#zbar"), zoomModeRow: $("#zoomModeRow"), zoomModeBtn: $("#zoomModeBtn"), zoomModeLbl: $("#zoomModeLbl"), tabFeatures: $("#tabFeatures"), paneFeatures: $("#paneFeatures"), armBtn: $("#armBtn"), lbVidTools: $("#lbVidTools"), lbBack: $("#lbBack"), lbGrab: $("#lbGrab"), lbFwd: $("#lbFwd"), timerBtn: $("#timerBtn"), timerTag: $("#timerTag"), zoomChip: $("#zoomChip"), countdown: $("#countdown"), cdNum: $("#cdNum"), cdSub: $("#cdSub"), vitals: $("#vitals"), lockBtn: $("#lockBtn"), lockOv: $("#lockOv"), unlockBtn: $("#unlockBtn"), focusRing: $("#focusRing"), fsBtn: $("#fsBtn"), expRow: $("#expRow"), exp: $("#exp"), expVal: $("#expVal"), sheet: $("#sheet"), sheetClose: $("#sheetClose"), menuBtn: $("#menuBtn"), galleryBtn: $("#galleryBtn"), galCount: $("#galCount"), tabOptions: $("#tabOptions"), tabGallery: $("#tabGallery"), paneOptions: $("#paneOptions"), paneGallery: $("#paneGallery"), zoomRow: $("#zoomRow"), zoom: $("#zoom"), zoomVal: $("#zoomVal"),
     torchRow: $("#torchRow"), torchBtn: $("#torchBtn"), capsHint: $("#capsHint"),
     storageInfo: $("#storageInfo"), strip: $("#strip"), clear: $("#clear"), zip: $("#zip"),
     lb: $("#lightbox"), lbImg: $("#lbImg"), lbVideo: $("#lbVideo"), lbLabel: $("#lbLabel"),
@@ -599,7 +748,7 @@
   /* ------------------------------------------------------------- settings */
 
   var cfg = (function () {
-    var d = { res: "1080", fps: "30", mic: "on", fmt: "auto", burst: "5", autoSec: "3", pre: "0", post: "3", hires: "off", autolock: "off", timer: "0", trig: "sound", sens: "medium", cool: "15" };
+    var d = { res: "1080", fps: "30", mic: "on", fmt: "auto", burst: "5", autoSec: "3", pre: "0", post: "3", hires: "off", autolock: "off", timer: "0", trig: "sound", sens: "medium", cool: "15", zoomMode: "pinch", geo: "off" };
     try {
       var s = JSON.parse(localStorage.getItem("multicam.cfg") || "{}");
       for (var k in s) { if (Object.prototype.hasOwnProperty.call(d, k) && typeof s[k] === "string") d[k] = s[k]; }
@@ -607,6 +756,40 @@
     return d;
   })();
   function saveCfg() { try { localStorage.setItem("multicam.cfg", JSON.stringify(cfg)); } catch (e) {} }
+
+  /* ------------------------------------------------------------ feature switches */
+
+  var FEATURES = [
+    { g: "Gestures & controls" },
+    { id: "focus",   name: "Tap to focus",           desc: "Tap the view to focus there; hold to lock focus." },
+    { id: "pinch",   name: "Pinch to zoom",          desc: "Two-finger pinch (or mouse wheel) zooms when the camera supports it. Only used when Zoom control is Pinch or Both." },
+    { id: "burst",   name: "Hold shutter for burst", desc: "Press and hold the shutter to fire a photo burst. Off = one photo per tap." },
+    { id: "keys",    name: "Keyboard shortcuts",     desc: "Space, R, M, T, L, A and friends on a computer keyboard." },
+    { g: "Buttons on the view" },
+    { id: "moment",  name: "Catch moment button",    desc: "The ★ button under the view. Auto-catch still works without it." },
+    { id: "flip",    name: "Camera flip button",     desc: "Switch between front and rear cameras." },
+    { id: "fullscreen", name: "Full-screen button",  desc: "Expand the page to fill the screen." },
+    { id: "timer",   name: "Self-timer",             desc: "The stopwatch button and countdown. Off = shutter and record fire instantly." },
+    { id: "lock",    name: "Touch lock",             desc: "The padlock button and the auto-lock option." },
+    { id: "autocatch", name: "Auto-catch (sound / motion)", desc: "The eye button that fires Catch moment on its own. Turning it off disarms it." },
+    { g: "Viewer" },
+    { id: "editor", name: "Photo & video editor", desc: "The Edit button in the viewer: crop, rotate, adjust, filters, trim." },
+    { g: "Feedback" },
+    { id: "beeps",   name: "Countdown beeps",        desc: "Beeps during the self-timer (never while recording)." },
+    { id: "haptics", name: "Vibration",              desc: "Short buzzes on shutter, record, lock and warnings." },
+    { id: "flash",   name: "Screen flash",           desc: "White flash on the view when a photo is taken." },
+    { g: "Readouts & warnings" },
+    { id: "vitals",  name: "Battery & storage readout", desc: "The small chip in the corner of the view." },
+    { id: "warnings", name: "Low battery / storage warnings", desc: "Pop-up warnings and buzzes when running low." }
+  ];
+
+  var feat = (function () {
+    var f = {}, saved = {};
+    try { saved = JSON.parse(localStorage.getItem("multicam.feat") || "{}") || {}; } catch (e) {}
+    FEATURES.forEach(function (x) { if (x.id) f[x.id] = saved[x.id] === false ? false : true; });
+    return f;
+  })();
+  function saveFeat() { try { localStorage.setItem("multicam.feat", JSON.stringify(feat)); } catch (e) {} }
 
   var RES = { "720": [1280, 720], "1080": [1920, 1080], "4k": [3840, 2160] };
   var RING_FPS = 5;
@@ -658,7 +841,7 @@
     el.placeholder.classList.add("show");
   }
   function hidePlaceholder() { el.placeholder.classList.remove("show"); }
-  function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function buzz(p) { try { if (feat.haptics && navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
   function toBlobP(canvas, type, q) {
     return new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, type, q); });
   }
@@ -776,7 +959,15 @@
     requestAnimationFrame(function () { renderQueued = false; renderGallery(); });
   }
 
-  function addPhoto(blob, thumbBlob, w, h, t, tag) {
+  async function addPhoto(blob, thumbBlob, w, h, t, tag, meta) {
+    var geoDone = false;
+    if (meta && meta.keepExif) geoDone = !!meta.geo;
+    else if (cfg.geo === "on" && geo.fix) {
+      try {
+        var nb = await addExif(blob, geo.fix, t);
+        if (nb !== blob) { blob = nb; geoDone = true; }
+      } catch (e) { console.warn("EXIF failed", e); }
+    }
     state.seq += 1;
     var id = "p" + t + "-" + state.seq;
     var name = "multicam-" + stamp(t) + "-" + pad(state.seq, 3) + ".jpg";
@@ -784,12 +975,12 @@
       key: id, type: "photo", t: t, name: name, blob: blob,
       url: URL.createObjectURL(blob),
       thumbUrl: thumbBlob ? URL.createObjectURL(thumbBlob) : null,
-      thumbBlob: thumbBlob || null, w: w, h: h, tag: tag || ""
+      thumbBlob: thumbBlob || null, w: w, h: h, tag: tag || "", geo: geoDone
     };
     state.items.push(item);
     scheduleRender();
     refreshStorage();
-    return idbPut("shots", { id: id, t: t, name: name, blob: blob, thumb: thumbBlob || null, w: w, h: h, tag: tag || "" }).catch(storageWarn);
+    return idbPut("shots", { id: id, t: t, name: name, blob: blob, thumb: thumbBlob || null, w: w, h: h, tag: tag || "", geo: geoDone }).catch(storageWarn);
   }
 
   function videoExt(mime) { return /mp4/i.test(mime || "") ? "mp4" : "webm"; }
@@ -817,7 +1008,7 @@
       state.items.push({
         key: s.id, type: "photo", t: s.t, name: s.name, blob: s.blob, url: URL.createObjectURL(s.blob),
         thumbUrl: s.thumb ? URL.createObjectURL(s.thumb) : null, thumbBlob: s.thumb || null,
-        w: s.w, h: s.h, tag: s.tag || ""
+        w: s.w, h: s.h, tag: s.tag || "", geo: !!s.geo
       });
     });
     var vids = await idbAll("videos");
@@ -846,7 +1037,7 @@
     var photos = 0, videos = 0;
     state.items.forEach(function (it) { if (it.type === "video") videos++; else photos++; });
     el.count.textContent = photos + (photos === 1 ? " photo" : " photos") +
-      (videos ? " · " + videos + (videos === 1 ? " video" : " videos") : "");
+      (videos ? " · " + videos + (videos === 1 ? " video" : " videos") : "") + geoMark();
     el.clear.disabled = state.items.length === 0;
     el.zip.disabled = state.items.length === 0;
     el.galCount.textContent = state.items.length ? "(" + state.items.length + ")" : "";
@@ -873,10 +1064,10 @@
         var b = document.createElement("b");
         b.textContent = it.type === "video" ? "▶ " + (it.dur ? fmtDur(it.dur) : "") : String(idx + 1);
         btn.appendChild(b);
-        if (it.tag === "moment" || it.tag === "pre" || it.tag === "frame") {
+        if (it.tag === "moment" || it.tag === "pre" || it.tag === "frame" || it.tag === "edit") {
           var tg = document.createElement("b");
           tg.className = "tag";
-          tg.textContent = it.tag === "moment" ? "★" : it.tag === "frame" ? "frame" : "pre";
+          tg.textContent = it.tag === "moment" ? "★" : it.tag === "frame" ? "frame" : it.tag === "edit" ? "edit" : "pre";
           btn.appendChild(tg);
         }
         btn.addEventListener("click", function () { openLightbox(idx); });
@@ -959,7 +1150,7 @@
     var kind = it.type === "video" ? "video" : "photo";
     el.lbLabel.textContent = (state.lbIndex + 1) + " / " + state.items.length + " · " + kind + " · " +
       (it.w || "?") + "×" + (it.h || "?") + " · " + fmtBytes(it.blob.size) +
-      (it.dur ? " · " + fmtDur(it.dur) : "");
+      (it.dur ? " · " + fmtDur(it.dur) : "") + (it.geo ? " · 📍" : "");
     var many = state.items.length > 1;
     el.lbPrev.classList.toggle("hidden", !many);
     el.lbNext.classList.toggle("hidden", !many);
@@ -1317,6 +1508,7 @@
     var any = false;
     if (caps.zoom && caps.zoom.max > caps.zoom.min) {
       el.zoomRow.classList.remove("hidden");
+      el.zoomModeRow.classList.remove("hidden");
       state.zoomCaps = { min: caps.zoom.min, max: caps.zoom.max };
       el.zoom.min = caps.zoom.min; el.zoom.max = caps.zoom.max;
       el.zoom.step = caps.zoom.step || 0.1;
@@ -1324,7 +1516,7 @@
       el.zoomVal.textContent = (+el.zoom.value).toFixed(1) + "×";
       state.zoom = +el.zoom.value;
       any = true;
-    } else { el.zoomRow.classList.add("hidden"); state.zoomCaps = null; }
+    } else { el.zoomRow.classList.add("hidden"); el.zoomModeRow.classList.add("hidden"); state.zoomCaps = null; }
     if (caps.torch) {
       el.torchRow.classList.remove("hidden");
       el.torchBtn.textContent = "Torch: off";
@@ -1338,6 +1530,7 @@
       el.expVal.textContent = (+el.exp.value).toFixed(1);
       any = true;
     } else el.expRow.classList.add("hidden");
+    updateZoomBar();
     el.capsHint.classList.toggle("hidden", any);
   }
 
@@ -1386,6 +1579,7 @@
   }
 
   function flashScreen() {
+    if (!feat.flash) return;
     el.flash.classList.remove("go");
     void el.flash.offsetWidth;
     el.flash.classList.add("go");
@@ -1474,6 +1668,7 @@
     if (timerSecs() > 0) { runCountdown(timerSecs(), "Photo · tap shutter to cancel", singleShot); return; }
     holding = false;
     singleShot();
+    if (!feat.burst) return;
     holdTimer = setTimeout(function () {
       holdTimer = null;
       holding = true;
@@ -1772,7 +1967,8 @@
     if (!g.fired && !cancel) focusAt(g.x, g.y, false);
   }
   el.video.addEventListener("pointerdown", function (e) {
-    if (!state.stream) return;
+    if (!state.stream || !feat.focus) return;
+    if (gest) { clearTimeout(gest.t); gest = null; return; } // a second finger: not a focus gesture
     var g = { x: e.clientX, y: e.clientY, fired: false, t: 0 };
     g.t = setTimeout(function () { g.fired = true; buzz(20); focusAt(g.x, g.y, true); }, 550);
     gest = g;
@@ -1802,10 +1998,10 @@
   /* ------------------------------------------------------------ self-timer */
 
   var actx = null;
-  function timerSecs() { return +cfg.timer || 0; }
+  function timerSecs() { return feat.timer ? (+cfg.timer || 0) : 0; }
 
   function beep(freq, ms) {
-    if (state.rec) return; // never let a beep land on the recording
+    if (!feat.beeps || state.rec) return; // never let a beep land on the recording
     try {
       actx = actx || new (window.AudioContext || window.webkitAudioContext)();
       if (actx.state === "suspended") actx.resume();
@@ -1857,6 +2053,7 @@
     if (sel && sel.value !== String(t)) sel.value = String(t);
   }
   function cycleTimer() {
+    if (!feat.timer) return;
     var order = ["0", "3", "5", "10"];
     var i = order.indexOf(String(timerSecs()));
     cfg.timer = order[(i + 1) % order.length];
@@ -1865,6 +2062,72 @@
     toast(timerSecs() ? "Self-timer: " + timerSecs() + " s (photo and video)" : "Self-timer off", 1600);
   }
   el.timerBtn.addEventListener("click", cycleTimer);
+
+  /* --------------------------------------------------------- zoom presets */
+
+  var zoomAnim = null, zbarKey = "";
+  function pinchOn() { return feat.pinch && cfg.zoomMode !== "presets"; }
+
+  function zoomPresets() {
+    var zc = state.zoomCaps;
+    if (!zc) return [];
+    var list = [];
+    if (zc.min < 0.95) list.push(Math.round(zc.min * 10) / 10);
+    [1, 2, 3, 5, 10].forEach(function (v) { if (v >= zc.min - 0.001 && v <= zc.max + 0.001) list.push(v); });
+    if (list.length > 5) { var i = list.indexOf(3); if (i > -1) list.splice(i, 1); }
+    if (list.length > 5) list = list.slice(0, 5);
+    return list;
+  }
+  function zoomLabel(v) { return (v < 1 || v % 1 ? v.toFixed(1) : String(v)) + "×"; }
+
+  function updateZoomBar() {
+    var presets = zoomPresets();
+    var mode = cfg.zoomMode || "pinch";
+    el.zoomModeBtn.classList.toggle("hidden", !state.zoomCaps);
+    el.zoomModeLbl.textContent = "Zoom: " + (mode === "pinch" ? "Pinch" : mode === "presets" ? "Presets" : "Both");
+    var sel = $("#sZoomMode");
+    if (sel && sel.value !== mode) sel.value = mode;
+    var show = presets.length > 0 && mode !== "pinch";
+    el.zbar.classList.toggle("hidden", !show);
+    if (!show) return;
+    var key = presets.join(",");
+    if (key !== zbarKey) {
+      zbarKey = key;
+      el.zbar.innerHTML = "";
+      presets.forEach(function (v) {
+        var b = document.createElement("button");
+        b.textContent = zoomLabel(v);
+        b.setAttribute("data-z", v);
+        b.setAttribute("aria-label", "Zoom " + zoomLabel(v));
+        b.addEventListener("click", function (e) { e.stopPropagation(); animateZoomTo(v); });
+        el.zbar.appendChild(b);
+      });
+    }
+    var cur = state.zoom || (state.zoomCaps && state.zoomCaps.min) || 1, best = -1, bd = 1e9;
+    presets.forEach(function (v, i) { var d = Math.abs(Math.log(cur / v)); if (d < bd) { bd = d; best = i; } });
+    Array.prototype.forEach.call(el.zbar.children, function (b, i) { b.classList.toggle("on", i === best && bd < 0.08); });
+  }
+
+  function animateZoomTo(target) {
+    var zc = state.zoomCaps;
+    if (!zc) return;
+    target = Math.max(zc.min, Math.min(zc.max, target));
+    var from = state.zoom || zc.min, n = 0, steps = 8;
+    clearInterval(zoomAnim);
+    zoomAnim = setInterval(function () {
+      n++;
+      setZoom(from * Math.pow(target / from, n / steps));
+      if (n >= steps) { clearInterval(zoomAnim); zoomAnim = null; setZoom(target); }
+    }, 30);
+  }
+
+  el.zoomModeBtn.addEventListener("click", function () {
+    var order = ["pinch", "presets", "both"], i = order.indexOf(cfg.zoomMode || "pinch");
+    cfg.zoomMode = order[(i + 1) % order.length];
+    saveCfg();
+    updateZoomBar();
+    toast(cfg.zoomMode === "pinch" ? "Zoom: pinch" : cfg.zoomMode === "presets" ? "Zoom: preset buttons" : "Zoom: pinch + presets", 1500);
+  });
 
   /* ------------------------------------------------------------ pinch zoom */
 
@@ -1893,6 +2156,7 @@
     el.zoomChip.classList.remove("hidden");
     clearTimeout(zoomChipTimer);
     zoomChipTimer = setTimeout(function () { el.zoomChip.classList.add("hidden"); }, 1200);
+    updateZoomBar();
     zoomPending = z;
     if (!zoomBusy) pumpZoom();
     return true;
@@ -1901,7 +2165,9 @@
   el.video.addEventListener("pointerdown", function (e) {
     ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
     if (Object.keys(ptrs).length === 2) {
-      if (gest) { clearTimeout(gest.t); gest = null; } // a pinch is never a focus tap
+      if (gest) { clearTimeout(gest.t); gest = null; } // two fingers is never a focus tap/hold
+      if (!pinchOn()) return;
+      clearInterval(zoomAnim);
       if (!state.zoomCaps) {
         if (!zoomWarned) { zoomWarned = true; toast("This camera doesn't offer zoom in the browser", 3500); }
         return;
@@ -1921,7 +2187,7 @@
     });
   });
   el.video.addEventListener("wheel", function (e) {
-    if (!state.zoomCaps) return;
+    if (!pinchOn() || !state.zoomCaps) return;
     e.preventDefault();
     setZoom((state.zoom || state.zoomCaps.min) * (e.deltaY < 0 ? 1.1 : 0.91));
   }, { passive: false });
@@ -2023,6 +2289,7 @@
   }
 
   function toggleArm() {
+    if (!feat.autocatch) return;
     if (!state.stream) { toast("Start the camera first"); return; }
     if (state.armed) { disarm(); toast("Auto-catch off", 1500); }
     else armStart(false);
@@ -2069,15 +2336,673 @@
   }
   el.armBtn.addEventListener("click", toggleArm);
 
+  /* ------------------------------------------------------- photo & video editor */
+
+  var CTX_FILTER = (function () { try { return "filter" in document.createElement("canvas").getContext("2d"); } catch (e) { return false; } })();
+  var PRESETS = {
+    none:  { n: "Original", css: "", warm: 0 },
+    mono:  { n: "Mono",  css: "grayscale(1)", warm: 0 },
+    noir:  { n: "Noir",  css: "grayscale(1) contrast(1.35) brightness(.95)", warm: 0 },
+    sepia: { n: "Sepia", css: "sepia(.85)", warm: 0 },
+    vivid: { n: "Vivid", css: "saturate(1.45) contrast(1.1)", warm: 0 },
+    fade:  { n: "Fade",  css: "contrast(.88) brightness(1.08) saturate(.8)", warm: 0 },
+    warm:  { n: "Warm",  css: "saturate(1.1)", warm: 35 },
+    cool:  { n: "Cool",  css: "saturate(1.05)", warm: -35 }
+  };
+  var PRESET_ORDER = ["none", "mono", "noir", "sepia", "vivid", "fade", "warm", "cool"];
+  var ed = null, edEl = {}, edPan = null, edFilterWarned = false;
+  ["editor", "edTitle", "edCancel", "edReset", "edStage", "edCanvas", "edPlayRow", "edPlay", "edTime", "edSaveCopy", "edReplace",
+   "edBusy", "edBusyText", "edBar", "edBusyCancel", "edAspects", "edRotL", "edRotR", "edFlip", "edZoom", "edZoomV",
+   "edBright", "edContrast", "edSat", "edWarm", "edFilters", "edT0", "edT1", "edT0V", "edT1V", "edMute", "edTrimInfo", "edTabs", "lbEdit"
+  ].forEach(function (id) { edEl[id] = document.getElementById(id); });
+
+  function edDefaults() {
+    return { rot: 0, flip: false, aspect: 0, zoom: 1, cx: 0.5, cy: 0.5, bright: 0, contrast: 0, sat: 0, warm: 0, preset: "none", mute: false, t0: 0, t1: 0 };
+  }
+  function edFmt(sec) {
+    sec = Math.max(0, sec || 0);
+    var m = Math.floor(sec / 60), r = sec - m * 60;
+    return m + ":" + (r < 10 ? "0" : "") + r.toFixed(1);
+  }
+
+  // geometry of the crop window in rotated-image space
+  function edGeom(p, sw, sh) {
+    var odd = p.rot % 180 !== 0;
+    var rw = odd ? sh : sw, rh = odd ? sw : sh;
+    var a = p.aspect || rw / rh, bw, bh;
+    if (a > rw / rh) { bw = rw; bh = rw / a; } else { bh = rh; bw = rh * a; }
+    var z = Math.max(1, p.zoom), ww = bw / z, wh = bh / z;
+    var hx = ww / rw / 2, hy = wh / rh / 2;
+    var cx = Math.min(1 - hx, Math.max(hx, p.cx)), cy = Math.min(1 - hy, Math.max(hy, p.cy));
+    return { rw: rw, rh: rh, ww: ww, wh: wh, wx: cx * rw - ww / 2, wy: cy * rh - wh / 2, cx: cx, cy: cy };
+  }
+  function edFilterCSS(p) {
+    var pr = PRESETS[p.preset] || PRESETS.none;
+    var f = "brightness(" + (1 + p.bright / 100).toFixed(3) + ") contrast(" + (1 + p.contrast / 100).toFixed(3) + ") saturate(" + (1 + p.sat / 100).toFixed(3) + ")";
+    return pr.css ? f + " " + pr.css : f;
+  }
+
+  // draws the edited result into cv (longest side <= maxDim); returns the geometry used
+  function edDraw(cv, src, sw, sh, p, maxDim) {
+    var g = edGeom(p, sw, sh);
+    var sc = Math.min(1, maxDim / Math.max(g.ww, g.wh));
+    var ow = Math.max(1, Math.round(g.ww * sc)), oh = Math.max(1, Math.round(g.wh * sc));
+    if (cv.width !== ow) cv.width = ow;
+    if (cv.height !== oh) cv.height = oh;
+    var ctx = cv.getContext("2d");
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.filter = "none";
+    ctx.clearRect(0, 0, ow, oh);
+    ctx.setTransform(sc, 0, 0, sc, 0, 0);
+    ctx.translate(-g.wx, -g.wy);
+    if (p.flip) { ctx.translate(g.rw, 0); ctx.scale(-1, 1); }
+    if (p.rot === 90) { ctx.translate(g.rw, 0); ctx.rotate(Math.PI / 2); }
+    else if (p.rot === 180) { ctx.translate(g.rw, g.rh); ctx.rotate(Math.PI); }
+    else if (p.rot === 270) { ctx.translate(0, g.rh); ctx.rotate(-Math.PI / 2); }
+    if (CTX_FILTER) ctx.filter = edFilterCSS(p);
+    ctx.drawImage(src, 0, 0, sw, sh);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.filter = "none";
+    var warm = p.warm + (PRESETS[p.preset] || PRESETS.none).warm;
+    if (warm) {
+      ctx.globalCompositeOperation = "overlay";
+      ctx.globalAlpha = Math.min(1, Math.abs(warm) / 100 * 0.5);
+      ctx.fillStyle = warm > 0 ? "rgb(255,150,40)" : "rgb(40,130,255)";
+      ctx.fillRect(0, 0, ow, oh);
+      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+    }
+    return g;
+  }
+
+  function edWait(target, ev) {
+    return new Promise(function (res, rej) {
+      var ok = function () { target.removeEventListener(ev, ok); target.removeEventListener("error", bad); res(); };
+      var bad = function () { target.removeEventListener(ev, ok); target.removeEventListener("error", bad); rej(new Error("media error")); };
+      target.addEventListener(ev, ok); target.addEventListener("error", bad);
+    });
+  }
+  function edSeek(v, t) {
+    return new Promise(function (res) {
+      if (Math.abs(v.currentTime - t) < 0.001) { res(); return; }
+      var f = function () { v.removeEventListener("seeked", f); res(); };
+      v.addEventListener("seeked", f);
+      v.currentTime = t;
+    });
+  }
+  async function edDuration(v, ms) {
+    if (ms && ms > 0) return ms / 1000;
+    if (isFinite(v.duration) && v.duration > 0) return v.duration;
+    try { v.currentTime = 1e7; await edWait(v, "timeupdate"); } catch (e) {}
+    var d = v.duration;
+    await edSeek(v, 0);
+    return isFinite(d) ? d : 0;
+  }
+
+  function edSetTab(name) {
+    Array.prototype.forEach.call(edEl.edTabs.children, function (b) { b.classList.toggle("active", b.getAttribute("data-tab") === name); });
+    Array.prototype.forEach.call(document.querySelectorAll("#editor .ed-panel"), function (pn) { pn.classList.toggle("hidden", pn.getAttribute("data-panel") !== name); });
+    if (name === "filters") edBuildFilters();
+  }
+
+  function edBuildFilters() {
+    if (!ed || !ed.src) return;
+    edEl.edFilters.innerHTML = "";
+    PRESET_ORDER.forEach(function (id) {
+      var b = document.createElement("button");
+      b.className = "ed-f" + (ed.p.preset === id ? " on" : "");
+      var cv = document.createElement("canvas");
+      try { edDraw(cv, ed.src, ed.sw, ed.sh, { rot: 0, flip: false, aspect: 1, zoom: 1, cx: 0.5, cy: 0.5, bright: 0, contrast: 0, sat: 0, warm: 0, preset: id }, 72); } catch (e) {}
+      var lb = document.createElement("span"); lb.textContent = PRESETS[id].n;
+      b.appendChild(cv); b.appendChild(lb);
+      b.addEventListener("click", function () {
+        ed.p.preset = id; ed.dirty = true;
+        Array.prototype.forEach.call(edEl.edFilters.children, function (c) { c.classList.remove("on"); });
+        b.classList.add("on");
+        if (!CTX_FILTER && !edFilterWarned) { edFilterWarned = true; toast("This browser can't apply color filters to canvas — only crop/rotate will work", 4500); }
+      });
+      edEl.edFilters.appendChild(b);
+    });
+  }
+
+  function edSync() {
+    var p = ed.p;
+    Array.prototype.forEach.call(edEl.edAspects.children, function (b) { b.classList.toggle("on", Math.abs(parseFloat(b.getAttribute("data-a")) - p.aspect) < 0.001); });
+    edEl.edZoom.value = p.zoom; edEl.edZoomV.textContent = p.zoom.toFixed(1) + "×";
+    [["edBright", "bright"], ["edContrast", "contrast"], ["edSat", "sat"], ["edWarm", "warm"]].forEach(function (x) {
+      edEl[x[0]].value = p[x[1]];
+      edEl[x[0]].parentNode.querySelector("b").textContent = p[x[1]] > 0 ? "+" + p[x[1]] : String(p[x[1]]);
+    });
+    edEl.edFlip.classList.toggle("on", p.flip);
+    edEl.edMute.checked = p.mute;
+    if (ed.kind === "video") {
+      edEl.edT0.max = edEl.edT1.max = ed.dur;
+      edEl.edT0.value = p.t0; edEl.edT1.value = p.t1;
+      edEl.edT0V.textContent = edFmt(p.t0); edEl.edT1V.textContent = edFmt(p.t1);
+      edEl.edTrimInfo.textContent = "Clip length: " + edFmt(p.t1 - p.t0) + " of " + edFmt(ed.dur) + ". Video edits are re-recorded in real time, so a clip takes about as long to export as it lasts.";
+    }
+    if (ed.src) Array.prototype.forEach.call(edEl.edFilters.children, function (c, i) { c.classList.toggle("on", PRESET_ORDER[i] === p.preset); });
+  }
+
+  function edLoop() {
+    if (!ed) return;
+    if (ed.kind === "video" && ed.playing) {
+      var v = ed.src;
+      if (v.currentTime >= ed.p.t1 - 0.03 || v.ended) { v.pause(); ed.playing = false; edEl.edPlay.textContent = "▶ Play"; }
+      edEl.edTime.textContent = edFmt(v.currentTime - ed.p.t0) + " / " + edFmt(ed.p.t1 - ed.p.t0);
+      ed.dirty = true;
+    }
+    if (ed.dirty && ed.src && !ed.busy) {
+      ed.dirty = false;
+      try { edDraw(edEl.edCanvas, ed.src, ed.sw, ed.sh, ed.p, 1280); } catch (e) {}
+    }
+    ed.raf = requestAnimationFrame(edLoop);
+  }
+
+  async function openEditor() {
+    var it = state.items[state.lbIndex];
+    if (!it || !feat.editor || ed) return;
+    try { el.lbVideo.pause(); } catch (e) {}
+    var session = { item: it, kind: it.type, p: edDefaults(), sw: 0, sh: 0, src: null, dur: 0, dirty: true, raf: 0, busy: false, cancel: false, playing: false };
+    edEl.editor.classList.add("show");
+    edEl.editor.setAttribute("aria-hidden", "false");
+    edEl.edBusyText.textContent = "Loading…"; edEl.edBar.style.width = "0"; edEl.edBusyCancel.classList.add("hidden");
+    edEl.edBusy.classList.add("show");
+    ed = session;
+    var isVid = it.type === "video";
+    edEl.edTitle.textContent = isVid ? "Edit video" : "Edit photo";
+    edEl.edPlayRow.classList.toggle("hidden", !isVid);
+    edEl.edReplace.classList.toggle("hidden", isVid);
+    edEl.edTabs.querySelector('[data-tab="trim"]').classList.toggle("hidden", !isVid);
+    edSetTab("crop");
+    try {
+      if (isVid) {
+        var v = document.createElement("video");
+        v.muted = true; v.playsInline = true; v.preload = "auto"; v.src = it.url;
+        await edWait(v, "loadeddata");
+        session.dur = await edDuration(v, it.dur);
+        session.src = v; session.sw = v.videoWidth; session.sh = v.videoHeight;
+        session.p.t1 = session.dur;
+        v.addEventListener("seeked", function () { if (ed) ed.dirty = true; });
+        edEl.edTime.textContent = "0:00.0 / " + edFmt(session.dur);
+        edEl.edPlay.textContent = "▶ Play";
+      } else {
+        var bmp = await createImageBitmap(it.blob);
+        session.src = bmp; session.sw = bmp.width; session.sh = bmp.height;
+      }
+    } catch (e) {
+      edEl.edBusy.classList.remove("show");
+      closeEditor(true);
+      toast("Couldn't open that item for editing", 3500);
+      return;
+    }
+    edEl.edBusy.classList.remove("show");
+    edSync();
+    edBuildFilters();
+    session.raf = requestAnimationFrame(edLoop);
+  }
+
+  function closeEditor(force) {
+    if (!ed || (ed.busy && !force)) return;
+    cancelAnimationFrame(ed.raf);
+    if (ed.kind === "video" && ed.src) { try { ed.src.pause(); ed.src.removeAttribute("src"); ed.src.load(); } catch (e) {} }
+    if (ed.src && ed.src.close) { try { ed.src.close(); } catch (e) {} }
+    ed = null; edPan = null;
+    edEl.editor.classList.remove("show");
+    edEl.editor.setAttribute("aria-hidden", "true");
+  }
+  function edCancel() {
+    if (!ed || ed.busy) return;
+    var p = ed.p, d = edDefaults();
+    var changed = ["rot", "flip", "aspect", "zoom", "bright", "contrast", "sat", "warm", "preset", "mute"].some(function (k) { return p[k] !== d[k]; }) ||
+      (ed.kind === "video" && (p.t0 > 0.01 || p.t1 < ed.dur - 0.05));
+    if (changed && !confirm("Discard your edits?")) return;
+    closeEditor();
+  }
+
+  function edReset() {
+    if (!ed || ed.busy) return;
+    var keep = ed.kind === "video" ? ed.dur : 0;
+    ed.p = edDefaults(); ed.p.t1 = keep;
+    if (ed.kind === "video") { try { ed.src.pause(); } catch (e) {} ed.playing = false; edEl.edPlay.textContent = "▶ Play"; edSeek(ed.src, 0); }
+    edSync(); edBuildFilters(); ed.dirty = true;
+  }
+
+  // ---- controls ----
+  edEl.edCancel.addEventListener("click", edCancel);
+  edEl.edReset.addEventListener("click", edReset);
+  edEl.edTabs.addEventListener("click", function (e) { var b = e.target.closest("[data-tab]"); if (b && ed) edSetTab(b.getAttribute("data-tab")); });
+  edEl.edAspects.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-a]");
+    if (!b || !ed) return;
+    ed.p.aspect = parseFloat(b.getAttribute("data-a")); ed.p.cx = ed.p.cy = 0.5; ed.dirty = true; edSync();
+  });
+  function edRotate(dir) { if (!ed) return; ed.p.rot = (ed.p.rot + (dir > 0 ? 90 : 270)) % 360; ed.p.cx = ed.p.cy = 0.5; ed.dirty = true; }
+  edEl.edRotL.addEventListener("click", function () { edRotate(-1); });
+  edEl.edRotR.addEventListener("click", function () { edRotate(1); });
+  edEl.edFlip.addEventListener("click", function () { if (!ed) return; ed.p.flip = !ed.p.flip; ed.dirty = true; edSync(); });
+  edEl.edZoom.addEventListener("input", function () { if (!ed) return; ed.p.zoom = +edEl.edZoom.value; edEl.edZoomV.textContent = ed.p.zoom.toFixed(1) + "×"; ed.dirty = true; });
+  [["edBright", "bright"], ["edContrast", "contrast"], ["edSat", "sat"], ["edWarm", "warm"]].forEach(function (x) {
+    edEl[x[0]].addEventListener("input", function () {
+      if (!ed) return;
+      ed.p[x[1]] = +edEl[x[0]].value;
+      edEl[x[0]].parentNode.querySelector("b").textContent = ed.p[x[1]] > 0 ? "+" + ed.p[x[1]] : String(ed.p[x[1]]);
+      ed.dirty = true;
+      if (!CTX_FILTER && !edFilterWarned && x[1] !== "warm") { edFilterWarned = true; toast("This browser can't apply color adjustments to canvas", 4000); }
+    });
+  });
+  edEl.edMute.addEventListener("change", function () { if (ed) ed.p.mute = edEl.edMute.checked; });
+
+  edEl.edT0.addEventListener("input", function () {
+    if (!ed) return;
+    ed.p.t0 = Math.min(+edEl.edT0.value, ed.p.t1 - 0.1);
+    edEl.edT0.value = ed.p.t0; ed.playing = false; edEl.edPlay.textContent = "▶ Play";
+    try { ed.src.pause(); ed.src.currentTime = ed.p.t0; } catch (e) {}
+    edSync(); ed.dirty = true;
+  });
+  edEl.edT1.addEventListener("input", function () {
+    if (!ed) return;
+    ed.p.t1 = Math.max(+edEl.edT1.value, ed.p.t0 + 0.1);
+    edEl.edT1.value = ed.p.t1; ed.playing = false; edEl.edPlay.textContent = "▶ Play";
+    try { ed.src.pause(); ed.src.currentTime = Math.max(ed.p.t0, ed.p.t1 - 0.05); } catch (e) {}
+    edSync(); ed.dirty = true;
+  });
+  edEl.edPlay.addEventListener("click", function () {
+    if (!ed || ed.kind !== "video") return;
+    var v = ed.src;
+    if (ed.playing) { v.pause(); ed.playing = false; edEl.edPlay.textContent = "▶ Play"; return; }
+    if (v.currentTime < ed.p.t0 || v.currentTime >= ed.p.t1 - 0.05) v.currentTime = ed.p.t0;
+    v.play().then(function () { ed.playing = true; edEl.edPlay.textContent = "❚❚ Pause"; }).catch(function () { toast("Couldn't play the preview"); });
+  });
+
+  // drag the picture to reposition the crop
+  edEl.edCanvas.addEventListener("pointerdown", function (e) {
+    if (!ed || ed.busy) return;
+    edPan = { x: e.clientX, y: e.clientY };
+    try { edEl.edCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  edEl.edCanvas.addEventListener("pointermove", function (e) {
+    if (!ed || !edPan) return;
+    var dx = e.clientX - edPan.x, dy = e.clientY - edPan.y;
+    edPan.x = e.clientX; edPan.y = e.clientY;
+    var r = edEl.edCanvas.getBoundingClientRect(), g = edGeom(ed.p, ed.sw, ed.sh);
+    ed.p.cx = g.cx - (dx / r.width) * (g.ww / g.rw);
+    ed.p.cy = g.cy - (dy / r.height) * (g.wh / g.rh);
+    var g2 = edGeom(ed.p, ed.sw, ed.sh);
+    ed.p.cx = g2.cx; ed.p.cy = g2.cy;
+    ed.dirty = true;
+  });
+  ["pointerup", "pointercancel"].forEach(function (ev) { edEl.edCanvas.addEventListener(ev, function () { edPan = null; }); });
+  edEl.lbEdit.addEventListener("click", openEditor);
+
+  // ---- saving ----
+  async function edExtractExif(blob) {
+    var buf = new Uint8Array(await blob.arrayBuffer());
+    if (buf[0] !== 0xFF || buf[1] !== 0xD8) return null;
+    var p = 2;
+    while (p + 8 < buf.length && buf[p] === 0xFF && buf[p + 1] >= 0xE0 && buf[p + 1] <= 0xEF) {
+      var len = (buf[p + 2] << 8) | buf[p + 3];
+      if (buf[p + 1] === 0xE1 && buf[p + 4] === 0x45 && buf[p + 5] === 0x78 && buf[p + 6] === 0x69 && buf[p + 7] === 0x66) return buf.slice(p, p + 2 + len);
+      p += 2 + len;
+    }
+    return null;
+  }
+  async function edInsertApp1(blob, seg) {
+    var buf = new Uint8Array(await blob.arrayBuffer()), at = 2;
+    if (buf[2] === 0xFF && buf[3] === 0xE0) at = 4 + ((buf[4] << 8) | buf[5]);
+    return new Blob([buf.subarray(0, at), seg, buf.subarray(at)], { type: "image/jpeg" });
+  }
+
+  function edBusy(text, cancellable) {
+    ed.busy = true; ed.cancel = false;
+    edEl.edBusyText.textContent = text; edEl.edBar.style.width = "0";
+    edEl.edBusyCancel.classList.toggle("hidden", !cancellable);
+    edEl.edBusy.classList.add("show");
+  }
+  function edIdle() { if (ed) ed.busy = false; edEl.edBusy.classList.remove("show"); }
+  edEl.edBusyCancel.addEventListener("click", function () { if (ed) ed.cancel = true; });
+
+  function edShowItem(item) {
+    var idx = state.items.indexOf(item);
+    if (idx < 0) return;
+    state.lbIndex = idx;
+    renderLightbox();
+    el.lb.classList.add("show");
+  }
+
+  async function edSavePhoto(replace) {
+    var it = ed.item;
+    if (replace && !confirm("Replace the original photo with this edit? This can't be undone.")) return;
+    edBusy(replace ? "Replacing…" : "Saving…", false);
+    try {
+      var cv = document.createElement("canvas");
+      edDraw(cv, ed.src, ed.sw, ed.sh, ed.p, 4096);
+      var full = await toBlobP(cv, "image/jpeg", 0.92);
+      var th = document.createElement("canvas");
+      edDraw(th, ed.src, ed.sw, ed.sh, ed.p, 160);
+      var thumb = await toBlobP(th, "image/jpeg", 0.6);
+      if (!full) throw new Error("encode failed");
+      var keep = false;
+      if (it.geo) {
+        var seg = await edExtractExif(it.blob);
+        if (seg) { full = await edInsertApp1(full, seg); keep = true; }
+      }
+      await addPhoto(full, thumb, cv.width, cv.height, replace ? it.t : Date.now(), "edit", { keepExif: true, geo: keep });
+      var added = state.items[state.items.length - 1];
+      if (replace) {
+        var i = state.items.indexOf(it);
+        if (i > -1) { state.items.splice(i, 1); revokeItem(it); await idbDel("shots", it.key); }
+      }
+      sortItems();
+      renderGallery();
+      edIdle();
+      closeEditor(true);
+      edShowItem(added);
+      toast(replace ? "Original replaced" : "Saved as a new photo", 2200);
+    } catch (e) {
+      console.warn(e);
+      edIdle();
+      toast("Couldn't save that edit", 4000);
+    }
+  }
+
+  async function edSaveVideo() {
+    if (state.rec) { toast("Stop recording before exporting a video"); return; }
+    if (typeof MediaRecorder === "undefined") { toast("Video export isn't supported in this browser"); return; }
+    var p = ed.p, dur = p.t1 - p.t0, d = edDefaults();
+    if (dur < 0.2) { toast("That clip is too short"); return; }
+    var untouched = ["rot", "flip", "aspect", "zoom", "bright", "contrast", "sat", "warm", "preset", "mute"].every(function (k) { return p[k] === d[k]; }) &&
+      p.t0 < 0.01 && p.t1 > ed.dur - 0.05;
+    if (untouched) { toast("Nothing to change yet — trim, crop or add a filter first"); return; }
+    try { ed.src.pause(); } catch (e) {}
+    ed.playing = false; edEl.edPlay.textContent = "▶ Play";
+    edBusy("Exporting video… keep this screen open", true);
+    var vx = document.createElement("video"), actx = null, mr = null, tracks = [];
+    try {
+      vx.playsInline = true; vx.preload = "auto"; vx.src = ed.item.url;
+      await edWait(vx, "loadeddata");
+      var cv = document.createElement("canvas");
+      edDraw(cv, vx, ed.sw, ed.sh, p, 1920);
+      var fps = ed.item.fps || 30;
+      tracks = cv.captureStream(fps).getVideoTracks();
+      if (!p.mute) {
+        try {
+          actx = new (window.AudioContext || window.webkitAudioContext)();
+          var srcNode = actx.createMediaElementSource(vx), dest = actx.createMediaStreamDestination();
+          srcNode.connect(dest);
+          dest.stream.getAudioTracks().forEach(function (t) { tracks.push(t); });
+          if (actx.state === "suspended") await actx.resume();
+        } catch (e) { actx = null; }
+      }
+      var mime = pickMime(), opts = { videoBitsPerSecond: Math.max(4e6, Math.min(40e6, Math.round(cv.width * cv.height * fps * 0.12))) };
+      if (mime) opts.mimeType = mime;
+      mr = new MediaRecorder(new MediaStream(tracks), opts);
+      var chunks = [];
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      var stopped = new Promise(function (res) { mr.onstop = res; });
+
+      await edSeek(vx, p.t0);
+      edDraw(cv, vx, ed.sw, ed.sh, p, 1920);
+      mr.start(500);
+      await vx.play();
+      await new Promise(function (resolve) {
+        var iv = setInterval(function () {
+          edDraw(cv, vx, ed.sw, ed.sh, p, 1920);
+          var frac = Math.max(0, Math.min(1, (vx.currentTime - p.t0) / dur));
+          edEl.edBar.style.width = Math.round(frac * 100) + "%";
+          edEl.edBusyText.textContent = "Exporting video… " + Math.round(frac * 100) + "% — keep this screen open";
+          if (ed.cancel || vx.currentTime >= p.t1 - 0.02 || vx.ended) { clearInterval(iv); resolve(); }
+        }, Math.max(8, Math.round(1000 / fps)));
+      });
+      vx.pause();
+      if (mr.state !== "inactive") mr.stop();
+      await stopped;
+      tracks.forEach(function (t) { try { t.stop(); } catch (e) {} });
+      if (actx) { try { actx.close(); } catch (e) {} }
+      if (ed.cancel) { edIdle(); toast("Export cancelled", 1800); return; }
+      var type = (mr.mimeType || mime || "video/webm").split(";")[0];
+      var blob = new Blob(chunks, { type: type });
+      var pc = document.createElement("canvas");
+      pc.width = 160; pc.height = Math.max(1, Math.round(160 * cv.height / cv.width));
+      pc.getContext("2d").drawImage(cv, 0, 0, pc.width, pc.height);
+      var poster = await toBlobP(pc, "image/jpeg", 0.6);
+      var t = Date.now(), session = "v" + t;
+      var meta = { session: session, t: t, mime: mr.mimeType || mime || "video/webm", w: cv.width, h: cv.height, fps: Math.round(fps), markers: [], ended: true, dur: Math.round(dur * 1000), poster: poster };
+      await idbPut("vchunks", { session: session, idx: 0, blob: blob }).catch(storageWarn);
+      await idbPut("videos", meta).catch(storageWarn);
+      var item = makeVideoItem(meta, blob);
+      state.items.push(item);
+      sortItems();
+      renderGallery();
+      refreshStorage();
+      edIdle();
+      closeEditor(true);
+      edShowItem(item);
+      toast("Saved as a new video · " + fmtDur(dur * 1000) + " · " + fmtBytes(blob.size), 3200);
+    } catch (e) {
+      console.warn(e);
+      tracks.forEach(function (t) { try { t.stop(); } catch (er) {} });
+      if (actx) { try { actx.close(); } catch (er) {} }
+      try { if (mr && mr.state !== "inactive") mr.stop(); } catch (er) {}
+      edIdle();
+      toast("Video export failed — try a shorter clip or fewer changes", 5000);
+    }
+  }
+
+  edEl.edSaveCopy.addEventListener("click", function () { if (!ed || ed.busy) return; if (ed.kind === "video") edSaveVideo(); else edSavePhoto(false); });
+  edEl.edReplace.addEventListener("click", function () { if (!ed || ed.busy || ed.kind !== "photo") return; edSavePhoto(true); });
+
+  /* ------------------------------------------- location in photo metadata (EXIF) */
+
+  var geo = { id: null, fix: null, state: "off" };
+
+  function geoMark() {
+    if (cfg.geo !== "on") return "";
+    return geo.state === "ok" ? " · 📍" : geo.state === "denied" ? " · 📍✕" : " · 📍…";
+  }
+
+  function updateGeoUI() {
+    var on = cfg.geo === "on";
+    el.geoLbl.textContent = "Location: " + (on ? (geo.state === "ok" ? "On" : geo.state === "denied" ? "Blocked" : "Locating…") : "Off");
+    el.geoBtn.classList.toggle("active", on && geo.state === "ok");
+    var sel = $("#sGeo");
+    if (sel && sel.value !== cfg.geo) sel.value = cfg.geo;
+    var line = "";
+    if (on && geo.state === "ok" && geo.fix) line = " Current fix: ±" + Math.round(geo.fix.acc || 0) + " m accuracy.";
+    else if (on && geo.state === "wait") line = " Waiting for a GPS fix — photos taken before it arrives won't have location.";
+    else if (geo.state === "denied") line = " Location permission is blocked — allow it in the browser's site settings.";
+    el.geoHint.textContent = "Writes GPS coordinates and capture time into each photo's EXIF data. Photos only — browsers can't embed location in recorded video. Anyone you send a photo to can see where it was taken." + line;
+    scheduleRender();
+  }
+
+  function stopGeo() {
+    if (geo.id != null && navigator.geolocation) { try { navigator.geolocation.clearWatch(geo.id); } catch (e) {} }
+    geo.id = null; geo.fix = null; geo.state = "off";
+  }
+
+  function startGeo() {
+    stopGeo();
+    if (!navigator.geolocation) {
+      cfg.geo = "off"; saveCfg();
+      toast("This browser has no location support", 4000);
+      updateGeoUI();
+      return;
+    }
+    geo.state = "wait";
+    geo.id = navigator.geolocation.watchPosition(function (pos) {
+      var c = pos.coords;
+      geo.fix = {
+        lat: c.latitude, lon: c.longitude,
+        alt: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null,
+        acc: c.accuracy, t: pos.timestamp
+      };
+      geo.state = "ok";
+      updateGeoUI();
+    }, function (err) {
+      if (err && err.code === 1) {
+        stopGeo();
+        geo.state = "denied";
+        cfg.geo = "off"; saveCfg();
+        toast("Location permission was denied — photos won't include location", 5000);
+      } else if (geo.state !== "ok") geo.state = "wait";
+      updateGeoUI();
+    }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+    updateGeoUI();
+  }
+
+  function setGeo(on) {
+    cfg.geo = on ? "on" : "off";
+    saveCfg();
+    if (on) startGeo(); else { stopGeo(); updateGeoUI(); }
+  }
+  el.geoBtn.addEventListener("click", function () {
+    setGeo(cfg.geo !== "on");
+    toast(cfg.geo === "on" ? "Location on — new photos will include GPS" : "Location off — photos have no location", 2200);
+  });
+
+  // ---- minimal EXIF writer (GPS + capture time), inserted into a JPEG ----
+  function exifSegment(fix, tms) {
+    var enc = function (str) { var a = []; for (var i = 0; i < str.length; i++) a.push(str.charCodeAt(i) & 255); a.push(0); return a; };
+    var u16 = function (v) { return [(v >> 8) & 255, v & 255]; };
+    var u32 = function (v) { return [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255]; };
+    var rat = function (n, d) { return u32(n).concat(u32(d)); };
+    var p2 = function (n) { return String(n).padStart(2, "0"); };
+    var d = new Date(tms);
+    var local = d.getFullYear() + ":" + p2(d.getMonth() + 1) + ":" + p2(d.getDate()) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
+    var off = -d.getTimezoneOffset(), ao = Math.abs(off);
+    var offStr = (off < 0 ? "-" : "+") + p2(Math.floor(ao / 60)) + ":" + p2(ao % 60);
+    var utcDate = d.getUTCFullYear() + ":" + p2(d.getUTCMonth() + 1) + ":" + p2(d.getUTCDate());
+    function dms(v) {
+      v = Math.abs(v);
+      var dd = Math.floor(v), mm = Math.floor((v - dd) * 60), ss = ((v - dd) * 60 - mm) * 60;
+      return rat(dd, 1).concat(rat(mm, 1), rat(Math.round(ss * 10000), 10000));
+    }
+    var ifd0 = [
+      { tag: 0x0132, type: 2, data: enc(local) },
+      { tag: 0x8769, type: 4, ptr: "exif" },
+      { tag: 0x8825, type: 4, ptr: "gps" }
+    ];
+    var exif = [
+      { tag: 0x9003, type: 2, data: enc(local) },
+      { tag: 0x9011, type: 2, data: enc(offStr) }
+    ];
+    var gps = [
+      { tag: 0x00, type: 1, data: [2, 3, 0, 0] },
+      { tag: 0x01, type: 2, data: enc(fix.lat >= 0 ? "N" : "S") },
+      { tag: 0x02, type: 5, data: dms(fix.lat) },
+      { tag: 0x03, type: 2, data: enc(fix.lon >= 0 ? "E" : "W") },
+      { tag: 0x04, type: 5, data: dms(fix.lon) }
+    ];
+    if (fix.alt != null) {
+      gps.push({ tag: 0x05, type: 1, data: [fix.alt < 0 ? 1 : 0] });
+      gps.push({ tag: 0x06, type: 5, data: rat(Math.round(Math.abs(fix.alt) * 100), 100) });
+    }
+    gps.push({ tag: 0x07, type: 5, data: rat(d.getUTCHours(), 1).concat(rat(d.getUTCMinutes(), 1), rat(d.getUTCSeconds(), 1)) });
+    gps.push({ tag: 0x1D, type: 2, data: enc(utcDate) });
+
+    var size = function (arr) { return 2 + 12 * arr.length + 4; };
+    var off1 = 8 + size(ifd0), off2 = off1 + size(exif), dataOff = off2 + size(gps), area = [];
+    function ser(arr) {
+      var out = u16(arr.length);
+      arr.forEach(function (e) {
+        var count = e.ptr ? 1 : e.type === 5 ? e.data.length / 8 : e.data.length, val;
+        if (e.ptr) val = u32(e.ptr === "exif" ? off1 : off2);
+        else if (e.data.length <= 4) val = e.data.concat([0, 0, 0, 0]).slice(0, 4);
+        else { val = u32(dataOff + area.length); area = area.concat(e.data); if (area.length & 1) area.push(0); }
+        out = out.concat(u16(e.tag), u16(e.type), u32(count), val);
+      });
+      return out.concat([0, 0, 0, 0]);
+    }
+    var b0 = ser(ifd0), b1 = ser(exif), b2 = ser(gps);
+    var tiff = [0x4D, 0x4D, 0x00, 0x2A].concat(u32(8), b0, b1, b2, area);
+    var body = [0x45, 0x78, 0x69, 0x66, 0, 0].concat(tiff);
+    return new Uint8Array([0xFF, 0xE1].concat(u16(body.length + 2), body));
+  }
+
+  async function addExif(blob, fix, tms) {
+    var buf = new Uint8Array(await blob.arrayBuffer());
+    if (buf[0] !== 0xFF || buf[1] !== 0xD8) return blob;
+    var p = 2, insertAt = 2;
+    while (p + 8 < buf.length && buf[p] === 0xFF && buf[p + 1] >= 0xE0 && buf[p + 1] <= 0xEF) {
+      var len = (buf[p + 2] << 8) | buf[p + 3];
+      if (buf[p + 1] === 0xE1 && buf[p + 4] === 0x45 && buf[p + 5] === 0x78 && buf[p + 6] === 0x69 && buf[p + 7] === 0x66) return blob; // already has EXIF: leave it alone
+      if (buf[p + 1] === 0xE0 && p === 2) insertAt = p + 2 + len;
+      p += 2 + len;
+    }
+    return new Blob([buf.subarray(0, insertAt), exifSegment(fix, tms), buf.subarray(insertAt)], { type: "image/jpeg" });
+  }
+
+  /* ------------------------------------------------------- feature switches UI */
+
+  function applyFeatures() {
+    var root = document.documentElement;
+    FEATURES.forEach(function (x) { if (x.id) root.classList.toggle("no-" + x.id, !feat[x.id]); });
+    if (!feat.autocatch && state.armed) disarm();
+    if (!feat.lock && state.locked) unlockScreen();
+    if (!feat.timer && state.cd) cancelCountdown(false);
+    if (!feat.focus) { el.focusRing.classList.remove("go"); }
+    updateMode();
+    updateTimerUI();
+    updateVitals();
+  }
+
+  function renderFeatures() {
+    var host = el.paneFeatures;
+    host.innerHTML = "";
+    var intro = document.createElement("p");
+    intro.className = "hint";
+    intro.style.marginTop = "0";
+    intro.textContent = "Switch off anything that gets in your way. Your choices are remembered. A feature that is off is hidden and does nothing.";
+    host.appendChild(intro);
+    FEATURES.forEach(function (x) {
+      if (x.g) {
+        var h = document.createElement("div");
+        h.className = "fgroup";
+        h.textContent = x.g;
+        host.appendChild(h);
+        return;
+      }
+      var row = document.createElement("label");
+      row.className = "frow" + (feat[x.id] ? "" : " off");
+      var txt = document.createElement("span");
+      txt.className = "ftxt";
+      var b = document.createElement("b"); b.textContent = x.name;
+      var sm = document.createElement("small"); sm.textContent = x.desc;
+      txt.appendChild(b); txt.appendChild(sm);
+      var cb = document.createElement("input");
+      cb.type = "checkbox"; cb.className = "sw"; cb.checked = !!feat[x.id];
+      cb.setAttribute("role", "switch");
+      cb.setAttribute("aria-label", x.name);
+      cb.addEventListener("change", function () {
+        feat[x.id] = cb.checked;
+        row.classList.toggle("off", !cb.checked);
+        saveFeat();
+        applyFeatures();
+      });
+      row.appendChild(txt); row.appendChild(cb);
+      host.appendChild(row);
+    });
+    var reset = document.createElement("button");
+    reset.className = "btn";
+    reset.style.marginTop = "8px";
+    reset.textContent = "Turn everything back on";
+    reset.addEventListener("click", function () {
+      FEATURES.forEach(function (x) { if (x.id) feat[x.id] = true; });
+      saveFeat(); applyFeatures(); renderFeatures();
+      toast("All features on", 1500);
+    });
+    host.appendChild(reset);
+  }
+
   /* ------------------------------------------------------------ touch lock */
 
   state.locked = false;
   var unlockTimer = null;
 
   function lockScreen() {
-    if (state.locked) return;
+    if (!feat.lock || state.locked) return;
     closeSheet();
     closeLightbox();
+    closeEditor();
     state.locked = true;
     el.lockOv.classList.remove("hidden");
     buzz(15);
@@ -2123,7 +3048,7 @@
   }
 
   function warnOnce(key, msg) {
-    if (warned[key]) return;
+    if (!feat.warnings || warned[key]) return;
     warned[key] = true;
     toast("⚠ " + msg, 7000);
     buzz([80, 60, 80]);
@@ -2194,11 +3119,11 @@
     el.gridBtn.classList.toggle("active", el.grid.classList.contains("on"));
   });
   function setTab(name) {
-    var g = name === "gallery";
-    el.tabOptions.classList.toggle("active", !g);
-    el.tabGallery.classList.toggle("active", g);
-    el.paneOptions.classList.toggle("hidden", g);
-    el.paneGallery.classList.toggle("hidden", !g);
+    var tabs = { options: [el.tabOptions, el.paneOptions], gallery: [el.tabGallery, el.paneGallery], features: [el.tabFeatures, el.paneFeatures] };
+    Object.keys(tabs).forEach(function (k) {
+      tabs[k][0].classList.toggle("active", k === name);
+      tabs[k][1].classList.toggle("hidden", k !== name);
+    });
   }
   function openSheet(tab) {
     setTab(tab || "options");
@@ -2215,6 +3140,7 @@
   el.galleryBtn.addEventListener("click", function () { openSheet("gallery"); });
   el.tabOptions.addEventListener("click", function () { setTab("options"); });
   el.tabGallery.addEventListener("click", function () { setTab("gallery"); });
+  el.tabFeatures.addEventListener("click", function () { setTab("features"); });
   el.sheetClose.addEventListener("click", closeSheet);
   el.sheet.addEventListener("click", function (e) { if (e.target === el.sheet) closeSheet(); });
   el.clear.addEventListener("click", clearAll);
@@ -2230,6 +3156,7 @@
     var v = +el.zoom.value;
     el.zoomVal.textContent = v.toFixed(1) + "×";
     state.zoom = v;
+    updateZoomBar();
     applyAdvanced({ zoom: v });
   });
   el.torchBtn.addEventListener("click", async function () {
@@ -2239,7 +3166,7 @@
     else toast("Torch isn't available right now");
   });
 
-  var fieldMap = { sRes: "res", sFps: "fps", sMic: "mic", sFmt: "fmt", sBurst: "burst", sAuto: "autoSec", sPre: "pre", sPost: "post", sHires: "hires", sLock: "autolock", sTimer: "timer", sTrig: "trig", sSens: "sens", sCool: "cool" };
+  var fieldMap = { sRes: "res", sFps: "fps", sMic: "mic", sFmt: "fmt", sBurst: "burst", sAuto: "autoSec", sPre: "pre", sPost: "post", sHires: "hires", sLock: "autolock", sTimer: "timer", sTrig: "trig", sSens: "sens", sCool: "cool", sZoomMode: "zoomMode", sGeo: "geo" };
   var camKeys = { res: 1, fps: 1, mic: 1 };
   Object.keys(fieldMap).forEach(function (id) {
     var sel = $("#" + id), key = fieldMap[id];
@@ -2252,6 +3179,8 @@
       if (camKeys[key]) { if (state.started) startCamera(); }
       else if (key === "pre") startRing();
       else if (key === "timer") updateTimerUI();
+      else if (key === "zoomMode") updateZoomBar();
+      else if (key === "geo") setGeo(cfg.geo === "on");
       else if (key === "trig" || key === "sens" || key === "cool") { if (state.armed) armStart(true); }
       else if (key === "autoSec") restartAuto();
       else if (key === "burst" && state.burstTimer) { clearInterval(state.burstTimer); state.burstTimer = null; ensureBurstTimer(); }
@@ -2266,6 +3195,7 @@
     var tag = (e.target && e.target.tagName || "").toLowerCase();
     if (tag === "select" || tag === "input") return;
     if (state.locked) return;
+    if (edEl.editor && edEl.editor.classList.contains("show")) { if (e.key === "Escape") edCancel(); return; }
     if (el.lb.classList.contains("show")) {
       if (e.key === "Escape") closeLightbox();
       if (e.key === "ArrowLeft") navLightbox(-1);
@@ -2273,15 +3203,16 @@
       if (e.key === ",") stepFrame(-1);
       if (e.key === ".") stepFrame(1);
       if (e.key === "g" || e.key === "G") grabFrame();
+      if (e.key === "e" || e.key === "E") openEditor();
       return;
     }
     if (el.sheet.classList.contains("show")) { if (e.key === "Escape") closeSheet(); return; }
-    if (!state.stream) return;
+    if (!state.stream || !feat.keys) return;
     if (e.code === "Space") {
       e.preventDefault();
       if (!spaceDown) { spaceDown = true; pressStart(); }
     } else if (e.key === "r" || e.key === "R") toggleRecording();
-    else if (e.key === "m" || e.key === "M") catchMoment();
+    else if ((e.key === "m" || e.key === "M") && feat.moment) catchMoment();
     else if (e.key === "l" || e.key === "L") lockScreen();
     else if (e.key === "t" || e.key === "T") cycleTimer();
     else if (e.key === "a" || e.key === "A") toggleArm();
@@ -2361,7 +3292,10 @@
   updateMirror();
   updateMode();
   startVitals();
+  if (cfg.geo === "on") startGeo(); else updateGeoUI();
   updateTimerUI();
+  renderFeatures();
+  applyFeatures();
 
   if (typeof MediaRecorder === "undefined") {
     el.recBtn.title = "Video recording isn't supported in this browser";
