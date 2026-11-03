@@ -267,7 +267,7 @@
   /* ---------- feature switches ---------- */
   .no-flip [data-feat="flip"],.no-fullscreen [data-feat="fullscreen"],.no-lock [data-feat="lock"],
   .no-timer [data-feat="timer"],.no-autocatch [data-feat="autocatch"],.no-vitals [data-feat="vitals"],
-  .no-moment [data-feat="moment"],.no-editor [data-feat="editor"]{display:none !important}
+  .no-moment [data-feat="moment"],.no-editor [data-feat="editor"],.no-import [data-feat="import"]{display:none !important}
   .fgroup{margin:14px 0 6px;font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
   .fgroup:first-of-type{margin-top:4px}
   .frow{
@@ -285,6 +285,12 @@
   .sw::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .18s}
   .sw:checked{background:var(--accent);border-color:transparent}
   .sw:checked::after{transform:translateX(18px)}
+
+  /* ---------- import ---------- */
+  .dropov{
+    position:fixed;inset:10px;z-index:90;display:flex;align-items:center;justify-content:center;pointer-events:none;
+    border:2px dashed var(--accent);border-radius:22px;background:rgba(10,10,18,.82);font-size:17px;font-weight:700
+  }
 
   /* ---------- editor ---------- */
   .editor{
@@ -530,6 +536,9 @@
         <button class="pill" id="gridBtn">
           <svg viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Grid
         </button>
+        <button class="pill" id="importPill" data-feat="import" title="Bring in photos or videos from this device to edit">
+          <svg viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Import &amp; edit
+        </button>
         <button class="pill hidden" id="installBtn">
           <svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/></svg>Install app
         </button>
@@ -624,6 +633,7 @@
     <div class="panel-head">
       <h3>Gallery</h3>
       <span class="spacer"></span>
+      <button class="btn" id="importBtn" data-feat="import">Import</button>
       <button class="btn ghost" id="clear" disabled>Clear</button>
       <button class="btn primary" id="zip" disabled>Download all</button>
     </div>
@@ -700,6 +710,9 @@
   </div>
   <div class="ed-panel hidden" data-panel="filters">
     <div class="ed-filters" id="edFilters"></div>
+    <div class="ed-slider"><span>Strength</span><input type="range" id="edFx" min="0" max="100" step="1" value="100"><b></b></div>
+    <div class="ed-slider"><span>Vignette</span><input type="range" id="edVig" min="0" max="100" step="1" value="0"><b></b></div>
+    <div class="ed-slider"><span>Grain</span><input type="range" id="edGrain" min="0" max="100" step="1" value="0"><b></b></div>
   </div>
   <div class="ed-panel hidden" data-panel="trim">
     <div class="ed-slider"><span>Start</span><input type="range" id="edT0" min="0" max="1" step="0.05" value="0"><b id="edT0V">0:00.0</b></div>
@@ -722,6 +735,9 @@
   <div class="lock-tag">🔒 Screen locked — recording is protected</div>
   <button class="unlock" id="unlockBtn"><i class="prog"></i><span>Hold to unlock</span></button>
 </div>
+
+<input type="file" id="importInput" accept="image/*,video/*" multiple hidden>
+<div class="dropov hidden" id="dropOv">Drop photos or videos to import</div>
 
 <div class="toast" id="toast"></div>
 
@@ -774,6 +790,7 @@
     { id: "autocatch", name: "Auto-catch (sound / motion)", desc: "The eye button that fires Catch moment on its own. Turning it off disarms it." },
     { g: "Viewer" },
     { id: "editor", name: "Photo & video editor", desc: "The Edit button in the viewer: crop, rotate, adjust, filters, trim." },
+    { id: "import", name: "Import files", desc: "Bring photos and videos from this device into the gallery to edit them (also drag & drop on a computer)." },
     { g: "Feedback" },
     { id: "beeps",   name: "Countdown beeps",        desc: "Beeps during the self-timer (never while recording)." },
     { id: "haptics", name: "Vibration",              desc: "Short buzzes on shutter, record, lock and warnings." },
@@ -970,7 +987,7 @@
     }
     state.seq += 1;
     var id = "p" + t + "-" + state.seq;
-    var name = "multicam-" + stamp(t) + "-" + pad(state.seq, 3) + ".jpg";
+    var name = (meta && meta.name) || ("multicam-" + stamp(t) + "-" + pad(state.seq, 3) + ".jpg");
     var item = {
       key: id, type: "photo", t: t, name: name, blob: blob,
       url: URL.createObjectURL(blob),
@@ -987,7 +1004,7 @@
 
   function makeVideoItem(meta, blob) {
     return {
-      key: meta.session, type: "video", t: meta.t, name: "multicam-" + stamp(meta.t) + "." + videoExt(meta.mime),
+      key: meta.session, type: "video", t: meta.t, name: meta.name || ("multicam-" + stamp(meta.t) + "." + videoExt(meta.mime)),
       blob: blob, url: URL.createObjectURL(blob),
       thumbBlob: meta.poster || null, thumbUrl: meta.poster ? URL.createObjectURL(meta.poster) : null,
       w: meta.w, h: meta.h, fps: meta.fps || 30, dur: meta.dur || null, markers: (meta.markers || []).slice(), tag: "", session: meta.session
@@ -2339,25 +2356,38 @@
   /* ------------------------------------------------------- photo & video editor */
 
   var CTX_FILTER = (function () { try { return "filter" in document.createElement("canvas").getContext("2d"); } catch (e) { return false; } })();
+  // css = canvas filter; warm = orange/blue push; tint = [color, blend mode, alpha]; vig = built-in vignette
   var PRESETS = {
-    none:  { n: "Original", css: "", warm: 0 },
-    mono:  { n: "Mono",  css: "grayscale(1)", warm: 0 },
-    noir:  { n: "Noir",  css: "grayscale(1) contrast(1.35) brightness(.95)", warm: 0 },
-    sepia: { n: "Sepia", css: "sepia(.85)", warm: 0 },
-    vivid: { n: "Vivid", css: "saturate(1.45) contrast(1.1)", warm: 0 },
-    fade:  { n: "Fade",  css: "contrast(.88) brightness(1.08) saturate(.8)", warm: 0 },
-    warm:  { n: "Warm",  css: "saturate(1.1)", warm: 35 },
-    cool:  { n: "Cool",  css: "saturate(1.05)", warm: -35 }
+    none:    { n: "Original", css: "" },
+    mono:    { n: "Mono",     css: "grayscale(1)" },
+    noir:    { n: "Noir",     css: "grayscale(1) contrast(1.35) brightness(.95)", vig: 25 },
+    sepia:   { n: "Sepia",    css: "sepia(.85)" },
+    vivid:   { n: "Vivid",    css: "saturate(1.45) contrast(1.1)" },
+    pop:     { n: "Pop",      css: "saturate(1.8) contrast(1.15) brightness(1.03)" },
+    chrome:  { n: "Chrome",   css: "contrast(1.25) saturate(1.3) brightness(1.02)" },
+    dramatic:{ n: "Dramatic", css: "contrast(1.4) saturate(.8) brightness(.92)", vig: 20 },
+    fade:    { n: "Fade",     css: "contrast(.88) brightness(1.08) saturate(.8)" },
+    matte:   { n: "Matte",    css: "contrast(.86) brightness(1.04) saturate(.85)", tint: ["#2a2633", "lighten", 1] },
+    instant: { n: "Instant",  css: "sepia(.22) saturate(1.3) contrast(.93) brightness(1.1)", tint: ["#ffb36b", "soft-light", 0.25] },
+    retro:   { n: "Retro",    css: "sepia(.4) contrast(.92) saturate(.9) brightness(1.04)", tint: ["#4a6cff", "soft-light", 0.14], vig: 18 },
+    lomo:    { n: "Lomo",     css: "contrast(1.3) saturate(1.25)", vig: 55 },
+    warm:    { n: "Warm",     css: "saturate(1.1)", warm: 35 },
+    sunset:  { n: "Sunset",   css: "saturate(1.25) contrast(1.05)", tint: ["#ff7a3d", "overlay", 0.3] },
+    cool:    { n: "Cool",     css: "saturate(1.05)", warm: -35 },
+    teal:    { n: "Teal&Orange", css: "contrast(1.15) saturate(1.2)", warm: 14, tint: ["#00a3b4", "soft-light", 0.34] },
+    night:   { n: "Night",    css: "brightness(.9) contrast(1.1) saturate(.9)", tint: ["#1b2a6b", "soft-light", 0.38], vig: 25 },
+    ocean:   { n: "Ocean",    css: "grayscale(1) contrast(1.1)", tint: ["#2a6fff", "color", 0.55] },
+    rose:    { n: "Rose",     css: "grayscale(1) contrast(1.05) brightness(1.05)", tint: ["#ff4f8b", "color", 0.5] }
   };
-  var PRESET_ORDER = ["none", "mono", "noir", "sepia", "vivid", "fade", "warm", "cool"];
+  var PRESET_ORDER = ["none", "mono", "noir", "sepia", "vivid", "pop", "chrome", "dramatic", "fade", "matte", "instant", "retro", "lomo", "warm", "sunset", "cool", "teal", "night", "ocean", "rose"];
   var ed = null, edEl = {}, edPan = null, edFilterWarned = false;
   ["editor", "edTitle", "edCancel", "edReset", "edStage", "edCanvas", "edPlayRow", "edPlay", "edTime", "edSaveCopy", "edReplace",
    "edBusy", "edBusyText", "edBar", "edBusyCancel", "edAspects", "edRotL", "edRotR", "edFlip", "edZoom", "edZoomV",
-   "edBright", "edContrast", "edSat", "edWarm", "edFilters", "edT0", "edT1", "edT0V", "edT1V", "edMute", "edTrimInfo", "edTabs", "lbEdit"
+   "edBright", "edContrast", "edSat", "edWarm", "edFx", "edVig", "edGrain", "edFilters", "edT0", "edT1", "edT0V", "edT1V", "edMute", "edTrimInfo", "edTabs", "lbEdit"
   ].forEach(function (id) { edEl[id] = document.getElementById(id); });
 
   function edDefaults() {
-    return { rot: 0, flip: false, aspect: 0, zoom: 1, cx: 0.5, cy: 0.5, bright: 0, contrast: 0, sat: 0, warm: 0, preset: "none", mute: false, t0: 0, t1: 0 };
+    return { rot: 0, flip: false, aspect: 0, zoom: 1, cx: 0.5, cy: 0.5, bright: 0, contrast: 0, sat: 0, warm: 0, preset: "none", fx: 100, vig: 0, grain: 0, mute: false, t0: 0, t1: 0 };
   }
   function edFmt(sec) {
     sec = Math.max(0, sec || 0);
@@ -2382,14 +2412,16 @@
     return pr.css ? f + " " + pr.css : f;
   }
 
-  // draws the edited result into cv (longest side <= maxDim); returns the geometry used
-  function edDraw(cv, src, sw, sh, p, maxDim) {
-    var g = edGeom(p, sw, sh);
-    var sc = Math.min(1, maxDim / Math.max(g.ww, g.wh));
-    var ow = Math.max(1, Math.round(g.ww * sc)), oh = Math.max(1, Math.round(g.wh * sc));
-    if (cv.width !== ow) cv.width = ow;
-    if (cv.height !== oh) cv.height = oh;
-    var ctx = cv.getContext("2d");
+  var edTemp = null, edNoise = null;
+  function edCss(p, withPreset) {
+    var f = "brightness(" + (1 + p.bright / 100).toFixed(3) + ") contrast(" + (1 + p.contrast / 100).toFixed(3) + ") saturate(" + (1 + p.sat / 100).toFixed(3) + ")";
+    var pr = PRESETS[p.preset] || PRESETS.none;
+    return withPreset && pr.css ? f + " " + pr.css : f;
+  }
+
+  // draws the source, rotated/flipped/cropped, with adjustments (and optionally the preset look) into ctx
+  function edPaint(ctx, ow, oh, g, sc, src, sw, sh, p, withPreset) {
+    var pr = PRESETS[p.preset] || PRESETS.none;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.filter = "none";
     ctx.clearRect(0, 0, ow, oh);
@@ -2399,18 +2431,81 @@
     if (p.rot === 90) { ctx.translate(g.rw, 0); ctx.rotate(Math.PI / 2); }
     else if (p.rot === 180) { ctx.translate(g.rw, g.rh); ctx.rotate(Math.PI); }
     else if (p.rot === 270) { ctx.translate(0, g.rh); ctx.rotate(-Math.PI / 2); }
-    if (CTX_FILTER) ctx.filter = edFilterCSS(p);
+    if (CTX_FILTER) ctx.filter = edCss(p, withPreset);
     ctx.drawImage(src, 0, 0, sw, sh);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.filter = "none";
-    var warm = p.warm + (PRESETS[p.preset] || PRESETS.none).warm;
+    var warm = p.warm + (withPreset ? (pr.warm || 0) : 0);
     if (warm) {
       ctx.globalCompositeOperation = "overlay";
       ctx.globalAlpha = Math.min(1, Math.abs(warm) / 100 * 0.5);
       ctx.fillStyle = warm > 0 ? "rgb(255,150,40)" : "rgb(40,130,255)";
       ctx.fillRect(0, 0, ow, oh);
-      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
     }
+    if (withPreset && pr.tint) {
+      ctx.globalCompositeOperation = pr.tint[1];
+      ctx.globalAlpha = pr.tint[2];
+      ctx.fillStyle = pr.tint[0];
+      ctx.fillRect(0, 0, ow, oh);
+    }
+    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+  }
+
+  // draws the edited result into cv (longest side <= maxDim); returns the geometry used
+  function edDraw(cv, src, sw, sh, p, maxDim) {
+    var g = edGeom(p, sw, sh);
+    var sc = Math.min(1, maxDim / Math.max(g.ww, g.wh));
+    var ow = Math.max(1, Math.round(g.ww * sc)), oh = Math.max(1, Math.round(g.wh * sc));
+    if (cv.width !== ow) cv.width = ow;
+    if (cv.height !== oh) cv.height = oh;
+    var ctx = cv.getContext("2d");
+    var pr = PRESETS[p.preset] || PRESETS.none;
+    var fx = (p.fx == null ? 100 : p.fx) / 100;
+    var hasPreset = p.preset && p.preset !== "none" && fx > 0.001;
+
+    if (!hasPreset || fx >= 0.99) {
+      edPaint(ctx, ow, oh, g, sc, src, sw, sh, p, hasPreset);
+    } else {
+      edPaint(ctx, ow, oh, g, sc, src, sw, sh, p, false);              // adjustments only
+      if (!edTemp) edTemp = document.createElement("canvas");
+      if (edTemp.width !== ow) edTemp.width = ow;
+      if (edTemp.height !== oh) edTemp.height = oh;
+      var tctx = edTemp.getContext("2d");
+      edPaint(tctx, ow, oh, g, sc, src, sw, sh, p, true);               // adjustments + look
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = fx;
+      ctx.drawImage(edTemp, 0, 0);                                      // blend at the chosen strength
+      ctx.globalAlpha = 1;
+    }
+
+    // vignette: the filter's own plus the slider, scaled by strength for the filter's part
+    var vig = Math.min(100, (p.vig || 0) + (hasPreset ? (pr.vig || 0) * fx : 0));
+    if (vig > 0.5) {
+      var r = Math.hypot(ow, oh) / 2, gr = ctx.createRadialGradient(ow / 2, oh / 2, r * 0.35, ow / 2, oh / 2, r);
+      gr.addColorStop(0, "rgba(0,0,0,0)");
+      gr.addColorStop(1, "rgba(0,0,0," + (vig / 100 * 0.85).toFixed(3) + ")");
+      ctx.fillStyle = gr;
+      ctx.fillRect(0, 0, ow, oh);
+    }
+    // film grain: a fixed noise tile, scaled with the picture so the preview matches the export
+    if (p.grain > 0) {
+      if (!edNoise) {
+        var nc = document.createElement("canvas"); nc.width = nc.height = 160;
+        var nctx = nc.getContext("2d"), id = nctx.createImageData(160, 160);
+        for (var i = 0; i < id.data.length; i += 4) { var v = Math.floor(Math.random() * 256); id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
+        nctx.putImageData(id, 0, 0);
+        edNoise = nc;
+      }
+      var k = Math.max(1, ow / 760);
+      ctx.save();
+      ctx.setTransform(k, 0, 0, k, 0, 0);
+      ctx.globalCompositeOperation = "overlay";
+      ctx.globalAlpha = p.grain / 100 * 0.5;
+      ctx.fillStyle = ctx.createPattern(edNoise, "repeat");
+      ctx.fillRect(0, 0, ow / k + 1, oh / k + 1);
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.filter = "none";
     return g;
   }
 
@@ -2451,7 +2546,7 @@
       var b = document.createElement("button");
       b.className = "ed-f" + (ed.p.preset === id ? " on" : "");
       var cv = document.createElement("canvas");
-      try { edDraw(cv, ed.src, ed.sw, ed.sh, { rot: 0, flip: false, aspect: 1, zoom: 1, cx: 0.5, cy: 0.5, bright: 0, contrast: 0, sat: 0, warm: 0, preset: id }, 72); } catch (e) {}
+      try { edDraw(cv, ed.psrc || ed.src, ed.psw || ed.sw, ed.psh || ed.sh, { rot: 0, flip: false, aspect: 1, zoom: 1, cx: 0.5, cy: 0.5, bright: 0, contrast: 0, sat: 0, warm: 0, preset: id }, 72); } catch (e) {}
       var lb = document.createElement("span"); lb.textContent = PRESETS[id].n;
       b.appendChild(cv); b.appendChild(lb);
       b.addEventListener("click", function () {
@@ -2471,6 +2566,10 @@
     [["edBright", "bright"], ["edContrast", "contrast"], ["edSat", "sat"], ["edWarm", "warm"]].forEach(function (x) {
       edEl[x[0]].value = p[x[1]];
       edEl[x[0]].parentNode.querySelector("b").textContent = p[x[1]] > 0 ? "+" + p[x[1]] : String(p[x[1]]);
+    });
+    [["edFx", "fx", "%"], ["edVig", "vig", ""], ["edGrain", "grain", ""]].forEach(function (x) {
+      edEl[x[0]].value = p[x[1]];
+      edEl[x[0]].parentNode.querySelector("b").textContent = p[x[1]] + x[2];
     });
     edEl.edFlip.classList.toggle("on", p.flip);
     edEl.edMute.checked = p.mute;
@@ -2493,13 +2592,13 @@
     }
     if (ed.dirty && ed.src && !ed.busy) {
       ed.dirty = false;
-      try { edDraw(edEl.edCanvas, ed.src, ed.sw, ed.sh, ed.p, 1280); } catch (e) {}
+      try { edDraw(edEl.edCanvas, ed.psrc || ed.src, ed.psw || ed.sw, ed.psh || ed.sh, ed.p, 1280); } catch (e) {}
     }
     ed.raf = requestAnimationFrame(edLoop);
   }
 
-  async function openEditor() {
-    var it = state.items[state.lbIndex];
+  async function openEditor(target) {
+    var it = target && target.blob ? target : state.items[state.lbIndex];
     if (!it || !feat.editor || ed) return;
     try { el.lbVideo.pause(); } catch (e) {}
     var session = { item: it, kind: it.type, p: edDefaults(), sw: 0, sh: 0, src: null, dur: 0, dirty: true, raf: 0, busy: false, cancel: false, playing: false };
@@ -2529,6 +2628,14 @@
         var bmp = await createImageBitmap(it.blob);
         session.src = bmp; session.sw = bmp.width; session.sh = bmp.height;
       }
+      // big photos: preview from a smaller copy so sliders stay smooth (saving still uses the full image)
+      session.psrc = session.src; session.psw = session.sw; session.psh = session.sh;
+      if (!isVid && Math.max(session.sw, session.sh) > 2400) {
+        var k = 2400 / Math.max(session.sw, session.sh), pc = document.createElement("canvas");
+        pc.width = Math.round(session.sw * k); pc.height = Math.round(session.sh * k);
+        pc.getContext("2d").drawImage(session.src, 0, 0, pc.width, pc.height);
+        session.psrc = pc; session.psw = pc.width; session.psh = pc.height;
+      }
     } catch (e) {
       edEl.edBusy.classList.remove("show");
       closeEditor(true);
@@ -2553,7 +2660,7 @@
   function edCancel() {
     if (!ed || ed.busy) return;
     var p = ed.p, d = edDefaults();
-    var changed = ["rot", "flip", "aspect", "zoom", "bright", "contrast", "sat", "warm", "preset", "mute"].some(function (k) { return p[k] !== d[k]; }) ||
+    var changed = ["rot", "flip", "aspect", "zoom", "bright", "contrast", "sat", "warm", "preset", "fx", "vig", "grain", "mute"].some(function (k) { return p[k] !== d[k]; }) ||
       (ed.kind === "video" && (p.t0 > 0.01 || p.t1 < ed.dur - 0.05));
     if (changed && !confirm("Discard your edits?")) return;
     closeEditor();
@@ -2588,6 +2695,14 @@
       edEl[x[0]].parentNode.querySelector("b").textContent = ed.p[x[1]] > 0 ? "+" + ed.p[x[1]] : String(ed.p[x[1]]);
       ed.dirty = true;
       if (!CTX_FILTER && !edFilterWarned && x[1] !== "warm") { edFilterWarned = true; toast("This browser can't apply color adjustments to canvas", 4000); }
+    });
+  });
+  [["edFx", "fx", "%"], ["edVig", "vig", ""], ["edGrain", "grain", ""]].forEach(function (x) {
+    edEl[x[0]].addEventListener("input", function () {
+      if (!ed) return;
+      ed.p[x[1]] = +edEl[x[0]].value;
+      edEl[x[0]].parentNode.querySelector("b").textContent = ed.p[x[1]] + x[2];
+      ed.dirty = true;
     });
   });
   edEl.edMute.addEventListener("change", function () { if (ed) ed.p.mute = edEl.edMute.checked; });
@@ -2632,7 +2747,7 @@
     ed.dirty = true;
   });
   ["pointerup", "pointercancel"].forEach(function (ev) { edEl.edCanvas.addEventListener(ev, function () { edPan = null; }); });
-  edEl.lbEdit.addEventListener("click", openEditor);
+  edEl.lbEdit.addEventListener("click", function () { openEditor(); });
 
   // ---- saving ----
   async function edExtractExif(blob) {
@@ -2710,7 +2825,7 @@
     if (typeof MediaRecorder === "undefined") { toast("Video export isn't supported in this browser"); return; }
     var p = ed.p, dur = p.t1 - p.t0, d = edDefaults();
     if (dur < 0.2) { toast("That clip is too short"); return; }
-    var untouched = ["rot", "flip", "aspect", "zoom", "bright", "contrast", "sat", "warm", "preset", "mute"].every(function (k) { return p[k] === d[k]; }) &&
+    var untouched = ["rot", "flip", "aspect", "zoom", "bright", "contrast", "sat", "warm", "preset", "fx", "vig", "grain", "mute"].every(function (k) { return p[k] === d[k]; }) &&
       p.t0 < 0.01 && p.t1 > ed.dur - 0.05;
     if (untouched) { toast("Nothing to change yet — trim, crop or add a filter first"); return; }
     try { ed.src.pause(); } catch (e) {}
@@ -2790,6 +2905,137 @@
 
   edEl.edSaveCopy.addEventListener("click", function () { if (!ed || ed.busy) return; if (ed.kind === "video") edSaveVideo(); else edSavePhoto(false); });
   edEl.edReplace.addEventListener("click", function () { if (!ed || ed.busy || ed.kind !== "photo") return; edSavePhoto(true); });
+
+  /* --------------------------------------------------------- import local files */
+
+  var importing = false;
+  function mimeFromName(n) {
+    var m = /\.([a-z0-9]+)$/i.exec(n || ""); if (!m) return "";
+    return ({ jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", bmp: "image/bmp", avif: "image/avif",
+              mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm", mkv: "video/x-matroska", "3gp": "video/3gpp" })[m[1].toLowerCase()] || "";
+  }
+  function uniqueName(name) {
+    var clean = String(name || "import").replace(/[\\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 120) || "import";
+    var dot = clean.lastIndexOf("."), base = dot > 0 ? clean.slice(0, dot) : clean, ext = dot > 0 ? clean.slice(dot) : "";
+    var used = {}; state.items.forEach(function (i) { used[i.name] = 1; });
+    var out = clean, n = 2;
+    while (used[out]) { out = base + " (" + n + ")" + ext; n++; }
+    return out;
+  }
+  function loadVideoMeta(url) {
+    return new Promise(function (resolve, reject) {
+      var v = document.createElement("video");
+      v.muted = true; v.playsInline = true; v.preload = "auto"; v.src = url;
+      var timer = setTimeout(function () { reject(new Error("timeout")); }, 20000);
+      v.addEventListener("error", function () { clearTimeout(timer); reject(new Error("unsupported")); });
+      v.addEventListener("loadeddata", async function () {
+        try {
+          var dur = await edDuration(v, 0);
+          var at = Math.min(Math.max(0.1, dur * 0.1), Math.max(0, dur - 0.05));
+          await edSeek(v, at);
+          var w = v.videoWidth, h = v.videoHeight;
+          if (!w || !h) throw new Error("no video track");
+          var c = document.createElement("canvas");
+          c.width = 160; c.height = Math.max(1, Math.round(160 * h / w));
+          c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+          var poster = await toBlobP(c, "image/jpeg", 0.6);
+          clearTimeout(timer);
+          v.removeAttribute("src"); v.load();
+          resolve({ w: w, h: h, dur: dur, poster: poster });
+        } catch (e) { clearTimeout(timer); reject(e); }
+      });
+    });
+  }
+
+  async function importPhoto(file) {
+    var bmp = await createImageBitmap(file);
+    var w = bmp.width, h = bmp.height;
+    var tc = document.createElement("canvas");
+    tc.width = 160; tc.height = Math.max(1, Math.round(160 * h / w));
+    tc.getContext("2d").drawImage(bmp, 0, 0, tc.width, tc.height);
+    bmp.close();
+    var thumb = await toBlobP(tc, "image/jpeg", 0.6);
+    var type = file.type || mimeFromName(file.name) || "image/jpeg";
+    var blob = file.type === type ? file : new Blob([file], { type: type });
+    await addPhoto(blob, thumb, w, h, Date.now(), "", { keepExif: true, geo: false, name: uniqueName(file.name) });
+    return state.items[state.items.length - 1];
+  }
+
+  async function importVideo(file) {
+    var type = file.type || mimeFromName(file.name) || "video/mp4";
+    var blob = file.type === type ? file : new Blob([file], { type: type });
+    var url = URL.createObjectURL(blob);
+    var info;
+    try { info = await loadVideoMeta(url); } finally { URL.revokeObjectURL(url); }
+    var t = Date.now(), session = "v" + t + "i" + (++state.seq);
+    var meta = { session: session, t: t, mime: type, w: info.w, h: info.h, fps: 30, markers: [], ended: true,
+                 dur: Math.round(info.dur * 1000), poster: info.poster, name: uniqueName(file.name) };
+    await idbPut("vchunks", { session: session, idx: 0, blob: blob }).catch(storageWarn);
+    await idbPut("videos", meta).catch(storageWarn);
+    var item = makeVideoItem(meta, blob);
+    state.items.push(item);
+    sortItems();
+    renderGallery();
+    refreshStorage();
+    return item;
+  }
+
+  async function importFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length || !feat.import) return;
+    if (importing) { toast("Still importing — one moment"); return; }
+    if (state.rec) { toast("Stop recording before importing files"); return; }
+    importing = true;
+    var added = [], skipped = [];
+    try {
+      for (var i = 0; i < files.length; i++) {
+        var f = files[i];
+        var kind = /^video\//.test(f.type) || /^video\//.test(mimeFromName(f.name)) ? "video" : /^image\//.test(f.type) || /^image\//.test(mimeFromName(f.name)) ? "image" : "";
+        if (!kind) { skipped.push(f.name); continue; }
+        toast("Importing " + (i + 1) + " of " + files.length + "…  " + f.name, 60000);
+        try {
+          var it = kind === "video" ? await importVideo(f) : await importPhoto(f);
+          if (it) added.push(it);
+        } catch (e) {
+          console.warn("import failed", f.name, e);
+          skipped.push(f.name);
+        }
+      }
+    } finally { importing = false; }
+    sortItems();
+    renderGallery();
+    if (!added.length) {
+      toast(skipped.length ? "Couldn't import " + (skipped.length === 1 ? "“" + skipped[0] + "”" : skipped.length + " files") + " — this browser can't read that format (HEIC and some video codecs aren't supported)" : "Nothing to import", 6000);
+      return;
+    }
+    var msg = "Imported " + added.length + (added.length === 1 ? " file" : " files") + (skipped.length ? " · " + skipped.length + " skipped (unsupported)" : "");
+    if (added.length === 1 && feat.editor) {
+      closeSheet(); closeLightbox();
+      toast(msg, 2200);
+      openEditor(added[0]);
+    } else {
+      toast(msg + " — open one and tap Edit", 4500);
+      openSheet("gallery");
+    }
+  }
+
+  el.importInput = $("#importInput");
+  function pickImport() { if (state.rec) { toast("Stop recording before importing files"); return; } el.importInput.value = ""; el.importInput.click(); }
+  $("#importBtn").addEventListener("click", pickImport);
+  $("#importPill").addEventListener("click", pickImport);
+  el.importInput.addEventListener("change", function () { importFiles(el.importInput.files); });
+
+  // drag & drop (computers)
+  var dragDepth = 0;
+  function hasFiles(e) { return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") > -1; }
+  window.addEventListener("dragenter", function (e) { if (feat.import && hasFiles(e)) { dragDepth++; $("#dropOv").classList.remove("hidden"); } });
+  window.addEventListener("dragleave", function (e) { if (hasFiles(e)) { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) $("#dropOv").classList.add("hidden"); } });
+  window.addEventListener("dragover", function (e) { if (hasFiles(e)) e.preventDefault(); });
+  window.addEventListener("drop", function (e) {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); dragDepth = 0; $("#dropOv").classList.add("hidden");
+    importFiles(e.dataTransfer.files);
+  });
 
   /* ------------------------------------------- location in photo metadata (EXIF) */
 
