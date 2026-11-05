@@ -1,5 +1,5 @@
 /* MultiCam service worker — caches the app shell so it opens offline. */
-var CACHE = "multicam-v12";
+var CACHE = "multicam-v13";
 var SHELL = [
   "./",
   "./index.html",
